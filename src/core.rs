@@ -1,4 +1,4 @@
-use std::ops::{Add, Sub};
+use std::ops::{Add, Mul, Sub};
 
 #[derive(Debug, Copy, Clone, PartialEq)]
 pub struct Point(f32, f32, f32);
@@ -41,6 +41,22 @@ impl Sub<Vector> for Point {
     }
 }
 
+impl Mul<Point> for f32 {
+    type Output = Point;
+
+    fn mul(self: f32, pt: Point) -> Point {
+        Point::new(self * pt.0, self * pt.1, self * pt.2)
+    }
+}
+
+impl Mul<f32> for Point {
+    type Output = Point;
+
+    fn mul(self: Point, scale: f32) -> Point {
+        Point::new(self.0 * scale, self.1 * scale, self.2 * scale)
+    }
+}
+
 #[derive(Debug, Copy, Clone, PartialEq)]
 pub struct Vector(f32, f32, f32);
 
@@ -48,36 +64,123 @@ impl Vector {
     pub fn new(x: f32, y: f32, z: f32) -> Vector {
         Vector(x, y, z)
     }
+
+    pub fn magnitude(self: &Vector) -> f32 {
+        (self.0 * self.0 + self.1 * self.1 + self.2 * self.2).sqrt()
+    }
 }
 
 impl Add for Vector {
-
     type Output = Vector;
 
     fn add(self: Vector, other: Vector) -> Vector {
-        Vector(
-            self.0 + other.0,
-            self.1 + other.1,
-            self.2 + other.2,
-        )
+        Vector(self.0 + other.0, self.1 + other.1, self.2 + other.2)
     }
-
 }
+
+impl Sub for Vector {
+    type Output = Vector;
+
+    fn sub(self: Vector, other: Vector) -> Vector {
+        Vector::new(self.0 - other.0, self.1 - other.1, self.2 - other.2)
+    }
+}
+
+impl Mul<Vector> for f32 {
+    type Output = Vector;
+
+    fn mul(self: f32, v: Vector) -> Vector {
+        Vector::new(self * v.0, self * v.1, self * v.2)
+    }
+}
+
+impl Mul<f32> for Vector {
+    type Output = Vector;
+
+    fn mul(self: Vector, scale: f32) -> Vector {
+        Vector::new(self.0 * scale, self.1 * scale, self.2 * scale)
+    }
+}
+
+
 
 #[cfg(test)]
 mod tests {
 
     use super::{Point, Vector};
 
+    fn assert_point_eq(pt1: Point, pt2: Point) {
+        assert_float_absolute_eq!(pt1.0, pt2.0);
+        assert_float_absolute_eq!(pt1.1, pt2.1);
+        assert_float_absolute_eq!(pt1.2, pt2.2);
+    }
+
+    fn assert_vector_eq(v1: Vector, v2: Vector) {
+        assert_float_absolute_eq!(v1.0, v2.0);
+        assert_float_absolute_eq!(v1.1, v2.1);
+        assert_float_absolute_eq!(v1.2, v2.2);
+    }
+
     #[test]
     fn add_vector_to_point() {
-
         let p1 = Point::new(1.0, 2.0, 3.0);
         let v1 = Vector::new(-1.0, -2.0, -3.0);
         let p2 = p1 + v1;
 
-        println!("{:?}, {:?}", p1, p2);
+        assert_point_eq(p2, Point::new(0.0, 0.0, 0.0));
+    }
 
-        assert_eq!(2 + 2, 3);
+    #[test]
+    fn subtract_points() {
+        let pt = Point::new(1.0, 2.0, 3.0);
+
+        assert_vector_eq(Vector::new(0.0, 0.0, 0.0), pt - pt);
+    }
+
+    #[test]
+    fn subtract_vector_from_point() {
+        let pt = Point::new(1.0, 2.0, 3.0);
+        let v = Vector::new(1.0, 2.0, -3.0);
+
+        assert_point_eq(Point::new(0.0, 0.0, 6.0), pt - v);
+    }
+
+    #[test]
+    fn scale_point() {
+        let pt = Point::new(1.0, 2.0, 3.0);
+
+        assert_point_eq(Point::new(2.0, 4.0, 6.0), 2.0 * pt);
+        assert_point_eq(Point::new(2.0, 4.0, 6.0), pt * 2.0);
+    }
+
+    #[test]
+    fn add_vectors() {
+        let v1 = Vector::new(1.0, 0.0, 1.0);
+        let v2 = Vector::new(0.0, 2.0, 2.0);
+
+        assert_vector_eq(Vector::new(1.0, 2.0, 3.0), v1 + v2);
+    }
+
+    #[test]
+    fn subtract_vectors() {
+        let v1 = Vector::new(1.0, 0.0, 1.0);
+        let v2 = Vector::new(0.0, 2.0, 2.0);
+
+        assert_vector_eq(Vector::new(1.0, -2.0, -1.0), v1 - v2);
+    }
+
+    #[test]
+    fn scale_vector() {
+        let v = Vector::new(1.0, 2.0, 3.0);
+
+        assert_vector_eq(Vector::new(2.0, 4.0, 6.0), 2.0 * v);
+        assert_vector_eq(Vector::new(2.0, 4.0, 6.0), v * 2.0);
+    }
+
+    #[test]
+    fn vector_magnitude() {
+        let v = Vector::new(3.0, 4.0, 0.0);
+
+        assert_float_absolute_eq!(5.0, v.magnitude());
     }
 }
