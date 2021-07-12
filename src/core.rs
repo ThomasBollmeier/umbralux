@@ -1,10 +1,10 @@
 use std::ops::{Add, Mul, Sub};
 
 #[derive(Debug, Copy, Clone, PartialEq)]
-pub struct Point(f32, f32, f32);
+pub struct Point(f64, f64, f64);
 
 impl Point {
-    pub fn new(x: f32, y: f32, z: f32) -> Point {
+    pub fn new(x: f64, y: f64, z: f64) -> Point {
         Point(x, y, z)
     }
 }
@@ -41,31 +41,31 @@ impl Sub<Vector> for Point {
     }
 }
 
-impl Mul<Point> for f32 {
+impl Mul<Point> for f64 {
     type Output = Point;
 
-    fn mul(self: f32, pt: Point) -> Point {
+    fn mul(self: f64, pt: Point) -> Point {
         Point::new(self * pt.0, self * pt.1, self * pt.2)
     }
 }
 
-impl Mul<f32> for Point {
+impl Mul<f64> for Point {
     type Output = Point;
 
-    fn mul(self: Point, scale: f32) -> Point {
+    fn mul(self: Point, scale: f64) -> Point {
         Point::new(self.0 * scale, self.1 * scale, self.2 * scale)
     }
 }
 
 #[derive(Debug, Copy, Clone, PartialEq)]
-pub struct Vector(f32, f32, f32);
+pub struct Vector(f64, f64, f64);
 
 impl Vector {
-    pub fn new(x: f32, y: f32, z: f32) -> Vector {
+    pub fn new(x: f64, y: f64, z: f64) -> Vector {
         Vector(x, y, z)
     }
 
-    pub fn magnitude(self: &Vector) -> f32 {
+    pub fn magnitude(self: &Vector) -> f64 {
         (self.0 * self.0 + self.1 * self.1 + self.2 * self.2).sqrt()
     }
 }
@@ -86,18 +86,18 @@ impl Sub for Vector {
     }
 }
 
-impl Mul<Vector> for f32 {
+impl Mul<Vector> for f64 {
     type Output = Vector;
 
-    fn mul(self: f32, v: Vector) -> Vector {
+    fn mul(self: f64, v: Vector) -> Vector {
         Vector::new(self * v.0, self * v.1, self * v.2)
     }
 }
 
-impl Mul<f32> for Vector {
+impl Mul<f64> for Vector {
     type Output = Vector;
 
-    fn mul(self: Vector, scale: f32) -> Vector {
+    fn mul(self: Vector, scale: f64) -> Vector {
         Vector::new(self.0 * scale, self.1 * scale, self.2 * scale)
     }
 }
