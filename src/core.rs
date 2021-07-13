@@ -68,6 +68,26 @@ impl Vector {
     pub fn magnitude(self: &Vector) -> f64 {
         (self.0 * self.0 + self.1 * self.1 + self.2 * self.2).sqrt()
     }
+
+    pub fn normalize(self: &Vector) -> Vector {
+        let m = self.magnitude();
+        Vector::new(self.0 / m, self.1 / m, self.2 / m)
+    }
+
+    pub fn dot(self: &Vector, other: Vector) -> f64 {
+        self.0 * other.0 +
+        self.1 * other.1 + 
+        self.2 * other.2
+    }
+
+    pub fn cross(self: &Vector, other: Vector) -> Vector {
+        Vector::new(
+            self.1 * other.2 - self.2 * other.1,
+            self.2 * other.0 - self.0 * other.2,
+            self.0 * other.1 - self.1 * other.0
+        )
+    }
+    
 }
 
 impl Add for Vector {
@@ -182,5 +202,30 @@ mod tests {
         let v = Vector::new(3.0, 4.0, 0.0);
 
         assert_float_absolute_eq!(5.0, v.magnitude());
+    }
+
+    #[test]
+    fn vector_normalize() {
+        let v = Vector::new(4.0, 0.0, 0.0);
+
+        assert_vector_eq(v.normalize(), Vector::new(1.0, 0.0, 0.0));
+    }
+
+    #[test]
+    fn vector_dot() {
+        let v1 = Vector::new(1.0, 2.0, 3.0);
+        let v2 = Vector::new(2.0, 3.0, 4.0);
+
+        assert_float_absolute_eq!(v1.dot(v2), 20.0);
+    }
+
+    #[test]
+    fn vector_cross() {
+        let v1 = Vector::new(1.0, 2.0, 3.0);
+        let v2 = Vector::new(2.0, 3.0, 4.0);
+
+        assert_vector_eq(v1.cross(v2), Vector::new(-1.0, 2.0, -1.0));
+        assert_vector_eq(v2.cross(v1), Vector::new(1.0, -2.0, 1.0));
+        assert_vector_eq(v1.cross(v1), Vector::new(0.0, 0.0, 0.0));
     }
 }
