@@ -4,8 +4,21 @@ use std::ops::{Add, Mul, Sub};
 pub struct Point(f64, f64, f64);
 
 impl Point {
+
     pub fn new(x: f64, y: f64, z: f64) -> Point {
         Point(x, y, z)
+    }
+    
+    pub fn x(&self) -> f64 {
+        self.0
+    }
+
+    pub fn y(&self) -> f64 {
+        self.1
+    }
+
+    pub fn z(&self) -> f64 {
+        self.2
     }
 }
 
@@ -61,8 +74,21 @@ impl Mul<f64> for Point {
 pub struct Vector(f64, f64, f64);
 
 impl Vector {
+
     pub fn new(x: f64, y: f64, z: f64) -> Vector {
         Vector(x, y, z)
+    }
+
+    pub fn x(&self) -> f64 {
+        self.0
+    }
+
+    pub fn y(&self) -> f64 {
+        self.1
+    }
+
+    pub fn z(&self) -> f64 {
+        self.2
     }
 
     pub fn magnitude(self: &Vector) -> f64 {

@@ -2,11 +2,35 @@ use umbralux::core::{Point, Vector};
 
 fn main() {
 
-    let pt = Point::new(1.0, 2.0, 3.0);
-    let v = Vector::new(-1.0, -2.0, -3.0);
+    let mut p = Projectile{
+        position: Point::new(0.0, 1.0, 0.0),
+        velocity: Vector::new(1.0, 1.0, 0.0).normalize(),
+    };
 
-    let pt2 = pt + v;
+    let env = Environment{
+        gravity: Vector::new(0.0, -0.1, 0.0),
+        wind: Vector::new(-0.01, 0.0, 0.0),
+    };
 
-    println!("{:?}", pt2);
+    while p.position.y() > 0.0 {
+        println!("Pos.: {:?} Veloc.: {:?}", p.position, p.velocity);
+        p = tick(&p, &env);
+    }
 
+}
+
+struct Projectile {
+    position: Point,
+    velocity: Vector,
+}
+
+struct Environment {
+    gravity: Vector,
+    wind: Vector,
+}
+
+fn tick(proj: &Projectile, env: &Environment) -> Projectile {
+    let position = proj.position + proj.velocity;
+    let velocity = proj.velocity + env.gravity + env.wind;
+    Projectile{position, velocity}
 }
