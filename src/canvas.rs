@@ -1,6 +1,6 @@
 use crate::core::Color;
 
-struct Canvas {
+pub struct Canvas {
     width: usize,
     height: usize,
     pixels: Vec<Vec<Color>>,
