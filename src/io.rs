@@ -1,5 +1,4 @@
 use crate::canvas::Canvas;
-use crate::core::Color;
 use std::fs::File;
 use std::io::{Result, Write};
 use std::path::Path;
@@ -12,6 +11,12 @@ pub fn export_as_ppm(canvas: &Canvas, file_name: &str) -> Result<()> {
         &mut ppm_file,
         "{}",
         create_ppm_header(max_color_value, canvas)
+    )?;
+
+    write!(
+        &mut ppm_file,
+        "{}",
+        create_ppm_body(max_color_value, canvas)
     )?;
 
     Ok(())
