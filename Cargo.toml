@@ -7,3 +7,4 @@ edition = "2018"
 
 [dependencies]
 assert_float_eq = "1"
+num-traits = "0.2.14"

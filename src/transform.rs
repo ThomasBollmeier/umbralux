@@ -1,13 +1,14 @@
-use std::ops::{Add, Mul};
+use num_traits::{Num, One, Zero};
+use std::fmt::Debug;
 
 #[derive(PartialEq, Debug)]
-pub struct Matrix<T: Copy + Add<Output = T> + Mul<Output = T>> {
+pub struct Matrix<T> {
     n: usize,
     m: usize,
     elements: Vec<Vec<T>>,
 }
 
-impl<T: Copy + Add<Output = T> + Mul<Output = T>> Matrix<T> {
+impl<T: Num + Zero + One + Copy + Debug> Matrix<T> {
     pub fn new(n: usize, m: usize, init_value: T) -> Self {
         let mut elements = Vec::with_capacity(n);
         for _ in 0..n {
@@ -104,6 +105,63 @@ impl<T: Copy + Add<Output = T> + Mul<Output = T>> Matrix<T> {
         })
     }
 
+    pub fn transpose(&self) -> Self {
+        let mut elements = Vec::new();
+        let (n, m) = self.size();
+
+        for col_idx in 0..m {
+            let mut row = Vec::new();
+            for row_idx in 0..n {
+                row.push(self.get(row_idx, col_idx));
+            }
+            elements.push(row);
+        }
+
+        Matrix {n: m, m: n, elements}
+    }
+
+    pub fn determinant(&self) -> Option<T> {
+        let (n, m) = self.size();
+        if n != m {
+            return None;
+        }
+
+        if n == 1 {
+            return Some(self.elements[0][0]);
+        }
+
+        let mut cofactor = T::one();
+        let mut ret = T::zero();
+
+        for col in 0..m {
+            ret = ret + cofactor * self.get(0, col) * self.sub_matrix(0, col).determinant().unwrap();
+            cofactor = T::zero() - cofactor;
+        }
+
+        Some(ret)
+    }
+
+    fn sub_matrix(&self, row: usize, col: usize) -> Self {
+        let (n, m) = self.size();
+        let mut elements = Vec::new();
+
+        for r in 0..n {
+            if r == row {
+                continue;
+            }
+            let mut new_row = Vec::new();
+            for c in 0..m {
+                if c == col {
+                    continue;
+                }
+                new_row.push(self.get(r, c));
+            }
+            elements.push(new_row);
+        }
+
+        Matrix {n: n - 1, m: m - 1, elements}
+    }
+
     fn sum_of_products(n: usize, vals1: &Vec<T>, vals2: &Vec<T>) -> T {
         let mut ret = vals1[0] * vals2[0];
 
@@ -194,5 +252,65 @@ mod tests {
         ]);
 
         assert_eq!(exp, a.multiply(&b).unwrap());
+    }
+
+    #[test]
+    fn matrix_transpose() {
+        let m = Matrix::from_elements(&vec![
+            vec![0, 9, 3, 0],
+            vec![9, 8, 0, 8],
+            vec![1, 8, 5, 3],
+            vec![0, 0, 5, 8],
+            vec![1, 2, 3, 4],
+        ]);
+
+        let exp = Matrix::from_elements(&vec![
+            vec![0, 9, 1, 0, 1],
+            vec![9, 8, 8, 0, 2],
+            vec![3, 0, 5, 5, 3],
+            vec![0, 8, 3, 8, 4],
+        ]);
+
+        assert_eq!(exp, m.transpose());
+    }
+
+    #[test]
+    fn sub_matrix() {
+        let m = Matrix::from_elements(&vec![
+            vec![1, 2, 3],
+            vec![4, 5, 6],
+            vec![7, 8, 9],
+        ]);
+
+        let exp = Matrix::from_elements(&vec![
+            vec![1, 3],
+            vec![7, 9],
+        ]);
+
+        assert_eq!(exp, m.sub_matrix(1, 1));
+    }
+
+    #[test]
+    fn matrix_determinant() {
+        let m = Matrix::from_elements(&vec![
+            vec![1, 2, 6],
+            vec![-5, 8, -4],
+            vec![2, 6, 4],
+        ]);
+
+        let exp = -196;
+
+        assert_eq!(exp, m.determinant().unwrap());
+
+        let m = Matrix::from_elements(&vec![
+            vec![-2, -8, 3, 5],
+            vec![-3, 1, 7, 3],
+            vec![1, 2, -9, 6],
+            vec![-6, 7, 7, -9],
+        ]);
+
+        let exp = -4071;
+
+        assert_eq!(exp, m.determinant().unwrap());
     }
 }
