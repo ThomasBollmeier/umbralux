@@ -130,15 +130,38 @@ impl<T: Num + Zero + One + Copy + Debug> Matrix<T> {
             return Some(self.elements[0][0]);
         }
 
-        let mut cofactor = T::one();
+        let mut sign = T::one();
         let mut ret = T::zero();
 
         for col in 0..m {
-            ret = ret + cofactor * self.get(0, col) * self.sub_matrix(0, col).determinant().unwrap();
-            cofactor = T::zero() - cofactor;
+            ret = ret + sign * self.get(0, col) * self.sub_matrix(0, col).determinant().unwrap();
+            sign = T::zero() - sign;
         }
 
         Some(ret)
+    }
+
+    pub fn invert(&self) -> Option<Self> {
+        if self.n != self.m {
+            return None;
+        }
+
+        let det = self.determinant().unwrap();
+        let mut inv = Matrix::new(self.m, self.n, T::zero());
+
+        for r in 0..self.n {
+            for c in 0..self.m {
+                let det_sub = self.sub_matrix(r, c).determinant().unwrap();
+                let sign = if (r + c) % 2 == 0 {
+                    T::one()
+                } else {
+                    T::zero() - T::one()
+                };
+                inv.set(c, r, sign * det_sub / det);
+            }
+        }
+
+        Some(inv)
     }
 
     fn sub_matrix(&self, row: usize, col: usize) -> Self {
@@ -178,6 +201,20 @@ impl<T: Num + Zero + One + Copy + Debug> Matrix<T> {
 #[cfg(test)]
 mod tests {
     use crate::transform::Matrix;
+
+    fn assert_matrix_float_eq(a: &Matrix<f64>, b: &Matrix<f64>) {
+        let (na, ma) = a.size();
+        let (nb, mb) = b.size();
+
+        assert_eq!(na, nb);
+        assert_eq!(ma, mb);
+
+        for r in 0..na {
+            for c in 0..ma {
+                assert_float_absolute_eq!(a.get(r, c), b.get(r, c));
+            }
+        }
+    }
 
     #[test]
     fn matrix_creation() {
@@ -312,5 +349,29 @@ mod tests {
         let exp = -4071;
 
         assert_eq!(exp, m.determinant().unwrap());
+    }
+
+    #[test]
+    fn matrix_inverse() {
+        let m = Matrix::from_elements(&vec![
+            vec![1.0, 2.0, 3.0],
+            vec![4.0, -5.0, 6.0],
+            vec![7.0, 8.0, -10.0],
+        ]);
+
+        let exp = Matrix::from_elements(&vec![
+            vec![1.0, 0.0, 0.0],
+            vec![0.0, 1.0, 0.0],
+            vec![0.0, 0.0, 1.0],
+        ]);
+
+        let m_inv = m.invert().unwrap();
+
+        assert_matrix_float_eq(&exp, &m.multiply(&m_inv).unwrap());
+        assert_matrix_float_eq(&exp, &m_inv.multiply(&m).unwrap());
+
+        let m_inv_inv = m_inv.invert().unwrap();
+
+        assert_matrix_float_eq(&m, &m_inv_inv);
     }
 }
