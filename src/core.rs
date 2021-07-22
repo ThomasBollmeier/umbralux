@@ -1,4 +1,5 @@
 use std::ops::{Add, Mul, Sub};
+use crate::matrix::{Matrix, ToMatrix};
 
 #[derive(Debug, Copy, Clone, PartialEq)]
 pub struct Point(f64, f64, f64);
@@ -18,6 +19,20 @@ impl Point {
 
     pub fn z(&self) -> f64 {
         self.2
+    }
+
+}
+
+impl ToMatrix<f64> for Point {
+
+    fn to_matrix(&self) -> Matrix<f64> {
+        let elements = vec![
+            vec![self.0],
+            vec![self.1],
+            vec![self.2],
+            vec![1.0],
+        ];
+        Matrix::from_elements(&elements)
     }
 }
 
@@ -109,6 +124,19 @@ impl Vector {
             self.2 * other.0 - self.0 * other.2,
             self.0 * other.1 - self.1 * other.0,
         )
+    }
+}
+
+impl ToMatrix<f64> for Vector {
+
+    fn to_matrix(&self) -> Matrix<f64> {
+        let elements = vec![
+            vec![self.0],
+            vec![self.1],
+            vec![self.2],
+            vec![0.0],
+        ];
+        Matrix::from_elements(&elements)
     }
 }
 

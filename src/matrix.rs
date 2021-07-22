@@ -1,5 +1,15 @@
 use num_traits::{Num, One, Zero};
 use std::fmt::Debug;
+use std::process::Output;
+
+pub trait ToMatrix<T> {
+    fn to_matrix(&self) -> Matrix<T>;
+}
+
+pub trait FromMatrix<T> {
+    type Output;
+    fn from_matrix(m: Matrix<T>) -> Option<Output>;
+}
 
 #[derive(PartialEq, Debug)]
 pub struct Matrix<T> {
@@ -9,12 +19,12 @@ pub struct Matrix<T> {
 }
 
 impl<T: Num + Zero + One + Copy + Debug> Matrix<T> {
-    pub fn new(n: usize, m: usize, init_value: T) -> Self {
+    pub fn new(n: usize, m: usize) -> Self {
         let mut elements = Vec::with_capacity(n);
         for _ in 0..n {
             let mut row: Vec<T> = Vec::with_capacity(m);
             for _ in 0..m {
-                row.push(init_value);
+                row.push(T::zero());
             }
             elements.push(row);
         }
@@ -147,7 +157,7 @@ impl<T: Num + Zero + One + Copy + Debug> Matrix<T> {
         }
 
         let det = self.determinant().unwrap();
-        let mut inv = Matrix::new(self.m, self.n, T::zero());
+        let mut inv = Matrix::new(self.m, self.n);
 
         for r in 0..self.n {
             for c in 0..self.m {
@@ -200,7 +210,7 @@ impl<T: Num + Zero + One + Copy + Debug> Matrix<T> {
 
 #[cfg(test)]
 mod tests {
-    use crate::transform::Matrix;
+    use crate::matrix::Matrix;
 
     fn assert_matrix_float_eq(a: &Matrix<f64>, b: &Matrix<f64>) {
         let (na, ma) = a.size();
@@ -218,7 +228,7 @@ mod tests {
 
     #[test]
     fn matrix_creation() {
-        let mut m = Matrix::new(4, 1, 0.0);
+        let mut m = Matrix::new(4, 1);
 
         let (n_rows, n_cols) = m.size();
         assert_eq!(n_rows, 4);
