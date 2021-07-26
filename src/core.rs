@@ -1,5 +1,6 @@
 use std::ops::{Add, Mul, Sub};
-use crate::matrix::{Matrix, ToMatrix};
+use crate::matrix::Matrix;
+use std::convert::TryFrom;
 
 #[derive(Debug, Copy, Clone, PartialEq)]
 pub struct Point(f64, f64, f64);
@@ -23,16 +24,20 @@ impl Point {
 
 }
 
-impl ToMatrix<f64> for Point {
+impl TryFrom<Matrix<f64>> for Point {
+    type Error = crate::Error;
 
-    fn to_matrix(&self) -> Matrix<f64> {
-        let elements = vec![
-            vec![self.0],
-            vec![self.1],
-            vec![self.2],
-            vec![1.0],
-        ];
-        Matrix::from_elements(&elements)
+    fn try_from(value: Matrix<f64>) -> Result<Self, Self::Error> {
+        let (n, m) = value.size();
+        if n < 3 || m != 1 {
+            return Err(Self::Error{message: "Invalid matrix size".to_string()});
+        }
+
+        Ok(Point(
+            value.get(0, 0),
+            value.get(1, 0),
+            value.get(2, 0),
+        ))
     }
 }
 
@@ -127,16 +132,20 @@ impl Vector {
     }
 }
 
-impl ToMatrix<f64> for Vector {
+impl TryFrom<Matrix<f64>> for Vector {
+    type Error = crate::Error;
 
-    fn to_matrix(&self) -> Matrix<f64> {
-        let elements = vec![
-            vec![self.0],
-            vec![self.1],
-            vec![self.2],
-            vec![0.0],
-        ];
-        Matrix::from_elements(&elements)
+    fn try_from(value: Matrix<f64>) -> Result<Self, Self::Error> {
+        let (n, m) = value.size();
+        if n < 3 || m != 1 {
+            return Err(Self::Error{message: "Invalid matrix size".to_string()});
+        }
+
+        Ok(Vector(
+            value.get(0, 0),
+            value.get(1, 0),
+            value.get(2, 0),
+        ))
     }
 }
 
@@ -242,6 +251,8 @@ impl Mul<Color> for Color {
 mod tests {
 
     use super::{Point, Vector, Color};
+    use crate::matrix::Matrix;
+    use std::convert::TryFrom;
 
     fn assert_point_eq(pt1: Point, pt2: Point) {
         assert_float_absolute_eq!(pt1.0, pt2.0);
@@ -259,6 +270,30 @@ mod tests {
         assert_float_absolute_eq!(c1.0, c2.0);
         assert_float_absolute_eq!(c1.1, c2.1);
         assert_float_absolute_eq!(c1.2, c2.2);
+    }
+
+    #[test]
+    fn point_conversion() {
+        let p1 = Point::new(1.0, 2.0, 3.0);
+        let m = Matrix::<f64>::from(p1);
+
+        assert_float_absolute_eq!(m.get(3, 0), 1.0);
+
+        let p2 = Point::try_from(m).unwrap();
+
+        assert_point_eq(p1, p2);
+    }
+
+    #[test]
+    fn vector_conversion() {
+        let v1 = Vector::new(1.0, 2.0, 3.0);
+        let m = Matrix::<f64>::from(v1);
+
+        assert_float_absolute_eq!(m.get(3, 0), 0.0);
+
+        let v2 = Vector::try_from(m).unwrap();
+
+        assert_vector_eq(v1, v2);
     }
 
     #[test]

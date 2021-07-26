@@ -1,15 +1,7 @@
 use num_traits::{Num, One, Zero};
 use std::fmt::Debug;
-use std::process::Output;
-
-pub trait ToMatrix<T> {
-    fn to_matrix(&self) -> Matrix<T>;
-}
-
-pub trait FromMatrix<T> {
-    type Output;
-    fn from_matrix(m: Matrix<T>) -> Option<Output>;
-}
+use crate::core::{Vector, Point};
+use crate::{Result, Error};
 
 #[derive(PartialEq, Debug)]
 pub struct Matrix<T> {
@@ -32,11 +24,15 @@ impl<T: Num + Zero + One + Copy + Debug> Matrix<T> {
         Matrix { n, m, elements }
     }
 
-    pub fn from_elements(elements: &Vec<Vec<T>>) -> Self {
+    pub fn from_elements(elements: &Vec<Vec<T>>) -> Result<Self> {
         let n = elements.len();
-        assert!(n > 0);
+        if n <= 0 {
+            return Err(Error{message: "Number of rows must be positive".to_string()})
+        }
         let m = elements[0].len();
-        assert!(m > 0);
+        if m <= 0 {
+            return Err(Error{message: "Number of columns must be positive".to_string()})
+        }
 
         let mut new_elements = Vec::with_capacity(n);
 
@@ -48,11 +44,11 @@ impl<T: Num + Zero + One + Copy + Debug> Matrix<T> {
             new_elements.push(new_row);
         }
 
-        Matrix {
+        Ok(Matrix {
             n,
             m,
             elements: new_elements,
-        }
+        })
     }
 
     pub fn size(&self) -> (usize, usize) {
@@ -206,6 +202,30 @@ impl<T: Num + Zero + One + Copy + Debug> Matrix<T> {
     }
 }
 
+impl From<Vector> for Matrix<f64> {
+
+    fn from(v: Vector) -> Self {
+        Matrix::from_elements(&vec![
+            vec![v.x()],
+            vec![v.y()],
+            vec![v.z()],
+            vec![0.0],
+        ]).unwrap()
+    }
+}
+
+impl From<Point> for Matrix<f64> {
+
+    fn from(p: Point) -> Self {
+        Matrix::from_elements(&vec![
+            vec![p.x()],
+            vec![p.y()],
+            vec![p.z()],
+            vec![1.0],
+        ]).unwrap()
+    }
+}
+
 // ============================================================================
 
 #[cfg(test)]
@@ -249,17 +269,17 @@ mod tests {
         let m1 = Matrix::from_elements(&vec![
             vec![1, 2],
             vec![3, 4]
-        ]);
+        ]).unwrap();
 
         let m2 = Matrix::from_elements(&vec![
             vec![1, 2],
             vec![3, 4]
-        ]);
+        ]).unwrap();
 
         let m3 = Matrix::from_elements(&vec![
             vec![4, 3],
             vec![2, 1]
-        ]);
+        ]).unwrap();
 
         assert_eq!(m1, m2);
         assert_ne!(m1, m3);
@@ -270,12 +290,12 @@ mod tests {
         let m = Matrix::from_elements(&vec![
             vec![1, 2],
             vec![3, 4]
-        ]);
+        ]).unwrap();
 
         let exp = Matrix::from_elements(&vec![
             vec![2, 4],
             vec![6, 8]
-        ]);
+        ]).unwrap();
 
         assert_eq!(exp, m.scale(2));
     }
@@ -285,18 +305,18 @@ mod tests {
         let a = Matrix::from_elements(&vec![
             vec![1, 2, 3],
             vec![3, 4, 5]
-        ]);
+        ]).unwrap();
 
         let b = Matrix::from_elements(&vec![
             vec![1, 2],
             vec![3, 4],
             vec![5, 6]
-        ]);
+        ]).unwrap();
 
         let exp = Matrix::from_elements(&vec![
             vec![22, 28],
             vec![40, 52]
-        ]);
+        ]).unwrap();
 
         assert_eq!(exp, a.multiply(&b).unwrap());
     }
@@ -309,14 +329,14 @@ mod tests {
             vec![1, 8, 5, 3],
             vec![0, 0, 5, 8],
             vec![1, 2, 3, 4],
-        ]);
+        ]).unwrap();
 
         let exp = Matrix::from_elements(&vec![
             vec![0, 9, 1, 0, 1],
             vec![9, 8, 8, 0, 2],
             vec![3, 0, 5, 5, 3],
             vec![0, 8, 3, 8, 4],
-        ]);
+        ]).unwrap();
 
         assert_eq!(exp, m.transpose());
     }
@@ -327,12 +347,12 @@ mod tests {
             vec![1, 2, 3],
             vec![4, 5, 6],
             vec![7, 8, 9],
-        ]);
+        ]).unwrap();
 
         let exp = Matrix::from_elements(&vec![
             vec![1, 3],
             vec![7, 9],
-        ]);
+        ]).unwrap();
 
         assert_eq!(exp, m.sub_matrix(1, 1));
     }
@@ -343,7 +363,7 @@ mod tests {
             vec![1, 2, 6],
             vec![-5, 8, -4],
             vec![2, 6, 4],
-        ]);
+        ]).unwrap();
 
         let exp = -196;
 
@@ -354,7 +374,7 @@ mod tests {
             vec![-3, 1, 7, 3],
             vec![1, 2, -9, 6],
             vec![-6, 7, 7, -9],
-        ]);
+        ]).unwrap();
 
         let exp = -4071;
 
@@ -367,13 +387,13 @@ mod tests {
             vec![1.0, 2.0, 3.0],
             vec![4.0, -5.0, 6.0],
             vec![7.0, 8.0, -10.0],
-        ]);
+        ]).unwrap();
 
         let exp = Matrix::from_elements(&vec![
             vec![1.0, 0.0, 0.0],
             vec![0.0, 1.0, 0.0],
             vec![0.0, 0.0, 1.0],
-        ]);
+        ]).unwrap();
 
         let m_inv = m.invert().unwrap();
 
