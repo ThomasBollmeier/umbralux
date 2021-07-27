@@ -253,24 +253,7 @@ mod tests {
     use super::{Point, Vector, Color};
     use crate::matrix::Matrix;
     use std::convert::TryFrom;
-
-    fn assert_point_eq(pt1: Point, pt2: Point) {
-        assert_float_absolute_eq!(pt1.0, pt2.0);
-        assert_float_absolute_eq!(pt1.1, pt2.1);
-        assert_float_absolute_eq!(pt1.2, pt2.2);
-    }
-
-    fn assert_vector_eq(v1: Vector, v2: Vector) {
-        assert_float_absolute_eq!(v1.0, v2.0);
-        assert_float_absolute_eq!(v1.1, v2.1);
-        assert_float_absolute_eq!(v1.2, v2.2);
-    }
-
-    fn assert_color_eq(c1: Color, c2: Color) {
-        assert_float_absolute_eq!(c1.0, c2.0);
-        assert_float_absolute_eq!(c1.1, c2.1);
-        assert_float_absolute_eq!(c1.2, c2.2);
-    }
+    use crate::testutil::{assert_point_eq, assert_vector_eq, assert_color_eq};
 
     #[test]
     fn point_conversion() {

@@ -51,6 +51,16 @@ impl<T: Num + Zero + One + Copy + Debug> Matrix<T> {
         })
     }
 
+    pub fn identity(n: usize) -> Self {
+        let mut ret = Matrix::new(n, n);
+
+        for i in 0..n {
+            ret.set(i, i, T::one());
+        }
+
+        ret
+    }
+
     pub fn size(&self) -> (usize, usize) {
         (self.n, self.m)
     }
@@ -81,12 +91,12 @@ impl<T: Num + Zero + One + Copy + Debug> Matrix<T> {
         }
     }
 
-    pub fn multiply(&self, other: &Matrix<T>) -> Option<Self> {
+    pub fn multiply(&self, other: &Matrix<T>) -> Result<Self> {
         let (n1, m1) = self.size();
         let (n2, m2) = other.size();
 
         if m1 != n2 {
-            return None;
+            return Err(Error{message: "Matrix sizes do not match for multiplication".to_string()})
         }
 
         let mut new_elements = Vec::new();
@@ -104,7 +114,7 @@ impl<T: Num + Zero + One + Copy + Debug> Matrix<T> {
             new_elements.push(new_row);
         }
 
-        Some(Matrix {
+        Ok(Matrix {
             n: n1,
             m: m2,
             elements: new_elements,
@@ -126,14 +136,14 @@ impl<T: Num + Zero + One + Copy + Debug> Matrix<T> {
         Matrix {n: m, m: n, elements}
     }
 
-    pub fn determinant(&self) -> Option<T> {
+    pub fn determinant(&self) -> Result<T> {
         let (n, m) = self.size();
         if n != m {
-            return None;
+            return Err(Error{message: "Determinant can not be calculated for non-square matrices".to_string()});
         }
 
         if n == 1 {
-            return Some(self.elements[0][0]);
+            return Ok(self.elements[0][0]);
         }
 
         let mut sign = T::one();
@@ -144,12 +154,12 @@ impl<T: Num + Zero + One + Copy + Debug> Matrix<T> {
             sign = T::zero() - sign;
         }
 
-        Some(ret)
+        Ok(ret)
     }
 
-    pub fn invert(&self) -> Option<Self> {
+    pub fn invert(&self) -> Result<Self> {
         if self.n != self.m {
-            return None;
+            return Err(Error{message: "Non-sqare matrices can not be inverted".to_string()});
         }
 
         let det = self.determinant().unwrap();
@@ -167,7 +177,7 @@ impl<T: Num + Zero + One + Copy + Debug> Matrix<T> {
             }
         }
 
-        Some(inv)
+        Ok(inv)
     }
 
     fn sub_matrix(&self, row: usize, col: usize) -> Self {
@@ -231,20 +241,7 @@ impl From<Point> for Matrix<f64> {
 #[cfg(test)]
 mod tests {
     use crate::matrix::Matrix;
-
-    fn assert_matrix_float_eq(a: &Matrix<f64>, b: &Matrix<f64>) {
-        let (na, ma) = a.size();
-        let (nb, mb) = b.size();
-
-        assert_eq!(na, nb);
-        assert_eq!(ma, mb);
-
-        for r in 0..na {
-            for c in 0..ma {
-                assert_float_absolute_eq!(a.get(r, c), b.get(r, c));
-            }
-        }
-    }
+    use crate::testutil::assert_matrix_float_eq;
 
     #[test]
     fn matrix_creation() {
