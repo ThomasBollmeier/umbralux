@@ -66,6 +66,19 @@ pub fn rotation_z(phi: f64) -> Matrix<f64> {
     ret
 }
 
+pub fn shearing(xy: f64, xz: f64, yx:f64, yz: f64, zx: f64, zy: f64) -> Matrix<f64> {
+    let mut ret = Matrix::identity(4);
+
+    ret.set(0, 1, xy);
+    ret.set(0, 2, xz);
+    ret.set(1, 0, yx);
+    ret.set(1, 2, yz);
+    ret.set(2, 0, zx);
+    ret.set(2, 1, zy);
+
+    ret
+}
+
 // ============================================================================
 
 #[cfg(test)]
@@ -73,7 +86,8 @@ mod tests {
     use crate::core::{Point, Vector};
     use super::{translation, transform};
     use crate::testutil::*;
-    use crate::transform::{scaling, rotation_x, rotation_y, rotation_z};
+    use crate::transform::{scaling, rotation_x, rotation_y, rotation_z, shearing};
+    use std::f64::consts::PI;
 
     #[test]
     fn translate_point() {
@@ -121,8 +135,8 @@ mod tests {
     #[test]
     fn rotate_point_x() {
         let p = Point::new(0.0, 1.0, 0.0);
-        let half_quarter = transform(p, &rotation_x(std::f64::consts::PI / 4.0)).unwrap();
-        let full_quarter = transform(p, &rotation_x(std::f64::consts::PI / 2.0)).unwrap();
+        let half_quarter = transform(p, &rotation_x(PI / 4.0)).unwrap();
+        let full_quarter = transform(p, &rotation_x(PI / 2.0)).unwrap();
 
         assert_point_eq(half_quarter, Point::new(0.0, 2.0_f64.sqrt()/2.0, 2.0_f64.sqrt()/2.0));
         assert_point_eq(full_quarter, Point::new(0.0, 0.0, 1.0));
@@ -131,8 +145,8 @@ mod tests {
     #[test]
     fn rotate_point_y() {
         let p = Point::new(0.0, 0.0,1.0);
-        let half_quarter = transform(p, &rotation_y(std::f64::consts::PI / 4.0)).unwrap();
-        let full_quarter = transform(p, &rotation_y(std::f64::consts::PI / 2.0)).unwrap();
+        let half_quarter = transform(p, &rotation_y(PI / 4.0)).unwrap();
+        let full_quarter = transform(p, &rotation_y(PI / 2.0)).unwrap();
 
         assert_point_eq(half_quarter, Point::new(2.0_f64.sqrt()/2.0, 0.0, 2.0_f64.sqrt()/2.0));
         assert_point_eq(full_quarter, Point::new(1.0, 0.0, 0.0));
@@ -141,10 +155,51 @@ mod tests {
     #[test]
     fn rotate_point_z() {
         let p = Point::new(0.0, 1.0,0.0);
-        let half_quarter = transform(p, &rotation_z(std::f64::consts::PI / 4.0)).unwrap();
-        let full_quarter = transform(p, &rotation_z(std::f64::consts::PI / 2.0)).unwrap();
+        let half_quarter = transform(p, &rotation_z(PI / 4.0)).unwrap();
+        let full_quarter = transform(p, &rotation_z(PI / 2.0)).unwrap();
 
         assert_point_eq(half_quarter, Point::new(-2.0_f64.sqrt()/2.0, 2.0_f64.sqrt()/2.0, 0.0));
         assert_point_eq(full_quarter, Point::new(-1.0, 0.0, 0.0));
+    }
+
+    #[test]
+    fn shear_point() {
+        let p = Point::new(2.0, 3.0, 4.0);
+
+        let mut t = shearing(1.0, 0.0, 0.0, 0.0, 0.0, 0.0);
+        assert_point_eq(Point::new(5.0, 3.0, 4.0), transform(p, &t).unwrap());
+
+        t = shearing(0.0, 1.0, 0.0, 0.0, 0.0, 0.0);
+        assert_point_eq(Point::new(6.0, 3.0, 4.0), transform(p, &t).unwrap());
+
+        t = shearing(0.0, 0.0, 1.0, 0.0, 0.0, 0.0);
+        assert_point_eq(Point::new(2.0, 5.0, 4.0), transform(p, &t).unwrap());
+
+        t = shearing(0.0, 0.0, 0.0, 1.0, 0.0, 0.0);
+        assert_point_eq(Point::new(2.0, 7.0, 4.0), transform(p, &t).unwrap());
+
+        t = shearing(0.0, 0.0, 0.0, 0.0, 1.0, 0.0);
+        assert_point_eq(Point::new(2.0, 3.0, 6.0), transform(p, &t).unwrap());
+
+        t = shearing(0.0, 0.0, 0.0, 0.0, 0.0, 1.0);
+        assert_point_eq(Point::new(2.0, 3.0, 7.0), transform(p, &t).unwrap());
+    }
+
+    #[test]
+    fn chaining_transformations() {
+
+        let a = rotation_x(PI / 2.0);
+        let b = scaling(5.0, 5.0, 5.0);
+        let c = translation(10.0, 5.0,7.0);
+        let d = c.multiply(&b).unwrap().multiply(&a).unwrap();
+
+        let p = Point::new(1.0, 0.0, 1.0);
+        let p2 = transform(p, &a).unwrap();
+        let p3 = transform(p2, &b).unwrap();
+        let p4 = transform(p3, &c).unwrap();
+
+        let p5 = transform(p, &d).unwrap();
+
+        assert_point_eq(p4, p5);
     }
 }
