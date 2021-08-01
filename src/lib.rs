@@ -16,5 +16,6 @@ pub mod canvas;
 pub mod io;
 pub mod matrix;
 pub mod transform;
+pub mod objects;
 
 pub mod testutil;
