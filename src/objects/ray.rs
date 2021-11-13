@@ -1,5 +1,5 @@
 use crate::core::{Point, Vector};
-use std::any::Any;
+use std::rc::Rc;
 
 pub struct Ray {
     origin: Point,
@@ -24,29 +24,30 @@ impl Ray {
     }
 }
 
-pub trait Object3D {
-    fn as_any(&self) -> &dyn Any;
-    fn intersect<'a, 'b>(&'b self, ray: &'a Ray) -> Vec<Intersection<'a, 'b>>;
+pub trait Object3D<T> {
+    fn intersect(&self, ray: &Rc<Ray>) -> Vec<Intersection<T>>;
 }
 
-pub struct Intersection<'a, 'b> {
-    ray: &'a Ray,
+pub struct Intersection<T> {
+    ray: Rc<Ray>,
     t: f64,
-    partner: &'b dyn Object3D,
+    partner: Rc<T>,
 }
 
-impl <'a, 'b> Intersection<'a, 'b> {
+impl <T> Intersection<T> {
 
-    pub fn new(ray: &'a Ray, t:f64, partner: &'b dyn Object3D) -> Self {
-        Intersection { ray, t, partner }
+    pub fn new(ray: &Rc<Ray>, t:f64, partner: &Rc<T>) -> Self {
+        Intersection {
+            ray: Rc::clone(ray),
+            t,
+            partner: Rc::clone(partner)
+        }
     }
 
     pub fn position(&self) -> Point {
         self.ray.position(self.t)
     }
 
-    pub fn partner(&self) -> &dyn Object3D {
-        self.partner
-    }
+    pub fn partner(&self) -> &Rc<T> { &self.partner }
 
 }
