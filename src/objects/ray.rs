@@ -1,5 +1,4 @@
 use crate::core::{Point, Vector};
-use std::rc::Rc;
 
 pub struct Ray {
     origin: Point,

@@ -8,10 +8,42 @@ pub trait Intersect {
     fn intersect(&self, ray: &Ray) -> Vec<f64>;
 }
 
-pub fn find_intersections(ray: &Rc<Ray>,partner: &Rc<dyn Intersect>) -> Vec<Intersection> {
+pub fn find_intersections(ray: &Rc<Ray>, partner: &Rc<dyn Intersect>) -> Vec<Intersection> {
     partner.intersect(ray).iter().map(|t| {
         Intersection::new(ray, *t, partner)
     }).collect()
+}
+
+pub fn find_many_intersections(ray: &Rc<Ray>, partners: &Vec<&Rc<dyn Intersect>>) -> Vec<Intersection> {
+    let mut ret: Vec<Intersection> = vec![];
+
+    for partner in partners {
+        let mut intersections = find_intersections(ray, *partner);
+        ret.append(&mut intersections);
+    }
+
+    ret
+}
+
+pub fn find_hit(intersections: Vec<Intersection>) -> Option<Intersection> {
+    let mut ret: Option<Intersection> = None;
+
+    for intersection in intersections {
+        let t = intersection.parameter();
+        if t < 0.0 {
+            continue;
+        }
+        ret = match ret {
+            Some(intersection_min) => if intersection_min.parameter() <= t {
+                Some(intersection_min)
+            } else {
+                Some(intersection)
+            }
+            None => Some(intersection)
+        }
+    }
+
+    ret
 }
 
 pub struct Intersection {
@@ -30,12 +62,20 @@ impl Intersection {
         }
     }
 
+    pub fn parameter(&self) -> f64 {
+        self.t
+    }
+
     pub fn position(&self) -> Point {
         self.ray.position(self.t)
     }
 
     pub fn partner(&self) -> &Rc<dyn Intersect> {
         &self.partner
+    }
+
+    pub fn partner_as<T: 'static + Intersect>(&self) -> &T {
+        &self.partner.as_any().downcast_ref::<T>().unwrap()
     }
 
 }

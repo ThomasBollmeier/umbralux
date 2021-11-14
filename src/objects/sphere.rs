@@ -49,7 +49,7 @@ mod tests {
     use std::rc::Rc;
     use crate::objects::ray::Ray;
     use crate::core::{Vector, Point};
-    use crate::objects::intersect::{find_intersections, Intersect};
+    use crate::objects::intersect::{find_hit, find_intersections, find_many_intersections, Intersect};
     use crate::objects::sphere::Sphere;
     use crate::testutil::assert_point_eq;
 
@@ -129,11 +129,49 @@ mod tests {
         assert_point_eq(intersections[1].position(), Point::new(0.0, 0.0, 1.0));
 
         let s = rc_s.as_any().downcast_ref::<Sphere>().unwrap();
-        let mut s2 = intersections[0].partner().as_any().downcast_ref::<Sphere>().unwrap();
+        let mut s2 = intersections[0].partner_as::<Sphere>();
         assert_eq!(s, s2);
-        s2 = intersections[1].partner().as_any().downcast_ref::<Sphere>().unwrap();
+        s2 = intersections[1].partner_as::<Sphere>();
         assert_eq!(s, s2);
 
     }
 
+    #[test]
+    fn hit_for_all_positive_intersections() {
+
+        let rc_r = Rc::new(Ray::new(Point::new(0.0, 0.0, -5.0), Vector::new(0.0, 0.0, 1.0)));
+        let rc_s1: Rc<dyn Intersect> = Rc::new(Sphere::new(Point::new(0.0, 0.0, 0.0), 1.0));
+        let rc_s2: Rc<dyn Intersect> = Rc::new(Sphere::new(Point::new(0.0, 0.0, 3.0), 1.0));
+
+        let hit = find_hit(find_many_intersections(&rc_r, &vec![&rc_s1, &rc_s2]));
+        assert!(hit.is_some());
+        let s1 = rc_s1.as_any().downcast_ref::<Sphere>().unwrap();
+        assert_eq!(s1, hit.unwrap().partner_as::<Sphere>());
+    }
+
+    #[test]
+    fn hit_for_all_negative_intersections() {
+
+        let rc_r = Rc::new(Ray::new(Point::new(0.0, 0.0, -5.0), Vector::new(0.0, 0.0, 1.0)));
+        let rc_s1: Rc<dyn Intersect> = Rc::new(Sphere::new(Point::new(0.0, 0.0, -7.0), 1.0));
+        let rc_s2: Rc<dyn Intersect> = Rc::new(Sphere::new(Point::new(0.0, 0.0, -10.0), 1.0));
+
+        let hit = find_hit(find_many_intersections(&rc_r, &vec![&rc_s1, &rc_s2]));
+        assert!(hit.is_none());
+    }
+
+    #[test]
+    fn hit_for_some_positive_intersections() {
+
+        let rc_r = Rc::new(Ray::new(Point::new(0.0, 0.0, -5.0), Vector::new(0.0, 0.0, 1.0)));
+        let rc_s1: Rc<dyn Intersect> = Rc::new(Sphere::new(Point::new(0.0, 0.0, 3.0), 1.0));
+        let rc_s2: Rc<dyn Intersect> = Rc::new(Sphere::new(Point::new(0.0, 0.0, -7.0), 1.0));
+        let rc_s3: Rc<dyn Intersect> = Rc::new(Sphere::new(Point::new(0.0, 0.0, 0.0), 1.0));
+        let rc_s4: Rc<dyn Intersect> = Rc::new(Sphere::new(Point::new(0.0, 0.0, -10.0), 1.0));
+
+        let hit = find_hit(find_many_intersections(&rc_r, &vec![&rc_s1, &rc_s2, &rc_s3, &rc_s4]));
+        assert!(hit.is_some());
+        let s3 = rc_s3.as_any().downcast_ref::<Sphere>().unwrap();
+        assert_eq!(s3, hit.unwrap().partner_as::<Sphere>());
+    }
 }
