@@ -23,31 +23,3 @@ impl Ray {
         self.origin + t * self.direction
     }
 }
-
-pub trait Object3D<T> {
-    fn intersect(&self, ray: &Rc<Ray>) -> Vec<Intersection<T>>;
-}
-
-pub struct Intersection<T> {
-    ray: Rc<Ray>,
-    t: f64,
-    partner: Rc<T>,
-}
-
-impl <T> Intersection<T> {
-
-    pub fn new(ray: &Rc<Ray>, t:f64, partner: &Rc<T>) -> Self {
-        Intersection {
-            ray: Rc::clone(ray),
-            t,
-            partner: Rc::clone(partner)
-        }
-    }
-
-    pub fn position(&self) -> Point {
-        self.ray.position(self.t)
-    }
-
-    pub fn partner(&self) -> &Rc<T> { &self.partner }
-
-}

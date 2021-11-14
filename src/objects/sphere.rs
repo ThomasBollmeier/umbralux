@@ -1,6 +1,7 @@
+use std::any::Any;
 use crate::core::Point;
-use crate::objects::ray::{Ray, Intersection, Object3D};
-use std::rc::Rc;
+use crate::objects::ray::Ray;
+use crate::objects::intersect::Intersect;
 
 #[derive(PartialEq, Debug)]
 pub struct Sphere {
@@ -34,21 +35,21 @@ impl Sphere {
     }
 }
 
-impl Object3D<Sphere> for Rc<Sphere> {
-
-    fn intersect(&self, ray: &Rc<Ray>) -> Vec<Intersection<Sphere>> {
-        let ts = self.intersects_with_ray_at(&*ray);
-        ts.iter().map(|t| {
-            Intersection::new(ray, *t, self)
-        }).collect()
+impl Intersect for Sphere {
+    fn as_any(&self) -> &dyn Any {
+        self
+    }
+    fn intersect(&self, ray: &Ray) -> Vec<f64> {
+        self.intersects_with_ray_at(ray)
     }
 }
 
 #[cfg(test)]
 mod tests {
     use std::rc::Rc;
-    use crate::objects::ray::{Ray, Object3D};
+    use crate::objects::ray::Ray;
     use crate::core::{Vector, Point};
+    use crate::objects::intersect::{find_intersections, Intersect};
     use crate::objects::sphere::Sphere;
     use crate::testutil::assert_point_eq;
 
@@ -118,19 +119,20 @@ mod tests {
     #[test]
     fn intersection_with_sphere_at_two_points() {
 
-        let r = Rc::new(Ray::new(Point::new(0.0, 0.0, -5.0), Vector::new(0.0, 0.0, 1.0)));
-        let s = Rc::new(Sphere::new(Point::new(0.0, 0.0, 0.0), 1.0));
+        let rc_r = Rc::new(Ray::new(Point::new(0.0, 0.0, -5.0), Vector::new(0.0, 0.0, 1.0)));
+        let rc_s: Rc<dyn Intersect> = Rc::new(Sphere::new(Point::new(0.0, 0.0, 0.0), 1.0));
 
-        let intersections = s.intersect(&r);
+        let intersections = find_intersections(&rc_r, &rc_s);
 
         assert_eq!(intersections.len(), 2);
         assert_point_eq(intersections[0].position(), Point::new(0.0, 0.0, -1.0));
         assert_point_eq(intersections[1].position(), Point::new(0.0, 0.0, 1.0));
 
-        let mut s2 = intersections[0].partner();
-        assert_eq!(&s, s2);
-        s2 = intersections[1].partner();
-        assert_eq!(&s, s2);
+        let s = rc_s.as_any().downcast_ref::<Sphere>().unwrap();
+        let mut s2 = intersections[0].partner().as_any().downcast_ref::<Sphere>().unwrap();
+        assert_eq!(s, s2);
+        s2 = intersections[1].partner().as_any().downcast_ref::<Sphere>().unwrap();
+        assert_eq!(s, s2);
 
     }
 
