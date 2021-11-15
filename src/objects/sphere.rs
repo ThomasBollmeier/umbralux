@@ -1,5 +1,6 @@
 use std::any::Any;
 use crate::core::Point;
+use crate::matrix::Matrix;
 use crate::objects::ray::Ray;
 use crate::objects::intersect::Intersect;
 
@@ -7,17 +8,31 @@ use crate::objects::intersect::Intersect;
 pub struct Sphere {
     origin: Point,
     radius: f64,
+    transformation: Matrix<f64>,
 }
 
 impl Sphere {
     pub fn new(origin: Point, radius: f64) -> Sphere {
-        Sphere { origin, radius }
+        let transformation = Matrix::identity(4);
+        Sphere { origin, radius, transformation }
     }
 
-    pub fn intersects_with_ray_at(&self, ray: &Ray) -> Vec<f64> {
+    pub fn set_transformation(&mut self, transformation: Matrix<f64>) {
+        self.transformation = transformation;
+    }
+}
+
+impl Intersect for Sphere {
+    fn as_any(&self) -> &dyn Any {
+        self
+    }
+
+    fn intersect(&self, ray: &Ray) -> Vec<f64> {
         let mut ret = Vec::new();
-        let a = ray.origin();
-        let b = ray.direction();
+
+        let transformed_ray = ray.transform(&self.transformation.invert().unwrap());
+        let a = transformed_ray.origin();
+        let b = transformed_ray.direction();
         let c = self.origin;
         let d = a - c;
 
@@ -35,15 +50,6 @@ impl Sphere {
     }
 }
 
-impl Intersect for Sphere {
-    fn as_any(&self) -> &dyn Any {
-        self
-    }
-    fn intersect(&self, ray: &Ray) -> Vec<f64> {
-        self.intersects_with_ray_at(ray)
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use std::rc::Rc;
@@ -52,6 +58,7 @@ mod tests {
     use crate::objects::intersect::{find_hit, find_intersections, find_many_intersections, Intersect};
     use crate::objects::sphere::Sphere;
     use crate::testutil::assert_point_eq;
+    use crate::transform::{scaling, translation};
 
     #[test]
     fn ray_intersects_with_sphere_at_two_points() {
@@ -59,7 +66,7 @@ mod tests {
         let r = Ray::new(Point::new(0.0, 0.0, -5.0), Vector::new(0.0, 0.0, 1.0));
         let s = Sphere::new(Point::new(0.0, 0.0, 0.0), 1.0);
 
-        let ts = s.intersects_with_ray_at(&r);
+        let ts = s.intersect(&r);
 
         assert_eq!(ts.len(), 2);
         assert_eq!(ts[0], 4.0);
@@ -72,7 +79,7 @@ mod tests {
         let r = Ray::new(Point::new(0.0, 1.0, -5.0), Vector::new(0.0, 0.0, 1.0));
         let s = Sphere::new(Point::new(0.0, 0.0, 0.0), 1.0);
 
-        let ts = s.intersects_with_ray_at(&r);
+        let ts = s.intersect(&r);
 
         assert_eq!(ts.len(), 2);
         assert_eq!(ts[0], 5.0);
@@ -85,7 +92,7 @@ mod tests {
         let r = Ray::new(Point::new(0.0, 2.0, -5.0), Vector::new(0.0, 0.0, 1.0));
         let s = Sphere::new(Point::new(0.0, 0.0, 0.0), 1.0);
 
-        let ts = s.intersects_with_ray_at(&r);
+        let ts = s.intersect(&r);
 
         assert_eq!(ts.len(), 0);
     }
@@ -96,7 +103,7 @@ mod tests {
         let r = Ray::new(Point::new(0.0, 0.0, 0.0), Vector::new(0.0, 0.0, 1.0));
         let s = Sphere::new(Point::new(0.0, 0.0, 0.0), 1.0);
 
-        let ts = s.intersects_with_ray_at(&r);
+        let ts = s.intersect(&r);
 
         assert_eq!(ts.len(), 2);
         assert_eq!(ts[0], -1.0);
@@ -109,7 +116,7 @@ mod tests {
         let r = Ray::new(Point::new(0.0, 0.0, 5.0), Vector::new(0.0, 0.0, 1.0));
         let s = Sphere::new(Point::new(0.0, 0.0, 0.0), 1.0);
 
-        let ts = s.intersects_with_ray_at(&r);
+        let ts = s.intersect(&r);
 
         assert_eq!(ts.len(), 2);
         assert_eq!(ts[0], -6.0);
@@ -173,5 +180,27 @@ mod tests {
         assert!(hit.is_some());
         let s3 = rc_s3.as_any().downcast_ref::<Sphere>().unwrap();
         assert_eq!(s3, hit.unwrap().partner_as::<Sphere>());
+    }
+
+    #[test]
+    fn intersect_a_scaled_sphere_with_a_ray() {
+        let ray = Ray::new(Point::new(0.0, 0.0, -5.0), Vector::new(0.0, 0.0, 1.0));
+        let mut sphere = Sphere::new(Point::new(0.0, 0.0, 0.0), 1.0);
+        sphere.set_transformation(scaling(2.0, 2.0, 2.0));
+
+        let xs = sphere.intersect(&ray);
+        assert_eq!(xs.len(), 2);
+        assert_float_absolute_eq!(xs[0], 3.0);
+        assert_float_absolute_eq!(xs[1], 7.0);
+    }
+
+    #[test]
+    fn intersect_a_translated_sphere_with_a_ray() {
+        let ray = Ray::new(Point::new(0.0, 0.0, -5.0), Vector::new(0.0, 0.0, 1.0));
+        let mut sphere = Sphere::new(Point::new(0.0, 0.0, 0.0), 1.0);
+        sphere.set_transformation(translation(5.0, 0.0, 0.0));
+
+        let xs = sphere.intersect(&ray);
+        assert_eq!(xs.len(), 0);
     }
 }

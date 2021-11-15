@@ -1,5 +1,6 @@
 use num_traits::{Num, One, Zero};
 use std::fmt::Debug;
+use std::ops::Mul;
 use crate::core::{Vector, Point};
 use crate::{Result, Error};
 
@@ -236,6 +237,16 @@ impl From<Point> for Matrix<f64> {
     }
 }
 
+impl <T> Mul<Matrix<T>> for Matrix<T>
+where T: Num + num_traits::Zero + One + Copy + Debug
+{
+    type Output = Matrix<T>;
+
+    fn mul(self, rhs: Matrix<T>) -> Self::Output {
+        self.multiply(&rhs).unwrap()
+    }
+}
+
 // ============================================================================
 
 #[cfg(test)]
@@ -316,6 +327,29 @@ mod tests {
         ]).unwrap();
 
         assert_eq!(exp, a.multiply(&b).unwrap());
+    }
+
+    #[test]
+    fn matrix_mult_operation() {
+        let a = Matrix::from_elements(&vec![
+            vec![1, 2, 3],
+            vec![3, 4, 5]
+        ]).unwrap();
+
+        let b = Matrix::from_elements(&vec![
+            vec![1, 2],
+            vec![3, 4],
+            vec![5, 6]
+        ]).unwrap();
+
+        let c = a * b; // <-- moves a & b
+
+        let exp = Matrix::from_elements(&vec![
+            vec![22, 28],
+            vec![40, 52]
+        ]).unwrap();
+
+        assert_eq!(exp, c);
     }
 
     #[test]
