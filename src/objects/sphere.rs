@@ -17,6 +17,10 @@ impl Sphere {
         Sphere { origin, radius, transformation }
     }
 
+    pub fn new_unit() -> Sphere {
+        Sphere::new(Point::new(0.0, 0.0, 0.0), 1.0)
+    }
+
     pub fn set_transformation(&mut self, transformation: Matrix<f64>) {
         self.transformation = transformation;
     }

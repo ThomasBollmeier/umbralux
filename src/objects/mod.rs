@@ -1,3 +1,3 @@
 pub mod sphere;
 pub mod ray;
-mod intersect;
+pub mod intersect;
