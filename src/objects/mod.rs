@@ -1,3 +1,3 @@
 pub mod sphere;
 pub mod ray;
-pub mod intersect;
+pub mod object3d;

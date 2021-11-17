@@ -1,8 +1,9 @@
 use std::any::Any;
-use crate::core::Point;
+use crate::core::{Point, Vector};
 use crate::matrix::Matrix;
 use crate::objects::ray::Ray;
-use crate::objects::intersect::Intersect;
+use crate::objects::object3d::{Intersect, Surface};
+use crate::transform::transform;
 
 #[derive(PartialEq, Debug)]
 pub struct Sphere {
@@ -54,14 +55,25 @@ impl Intersect for Sphere {
     }
 }
 
+impl Surface for Sphere {
+    fn normal_at(&self, pt: Point) -> Vector {
+        let t_inv = self.transformation.invert().unwrap();
+        let pt_trans = transform(pt,&t_inv).unwrap();
+        let normal_trans = pt_trans - self.origin;
+        let normal = transform(normal_trans, &self.transformation).unwrap();
+
+        normal.normalize()
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use std::rc::Rc;
     use crate::objects::ray::Ray;
     use crate::core::{Vector, Point};
-    use crate::objects::intersect::{find_hit, find_intersections, find_many_intersections, Intersect};
+    use crate::objects::object3d::{find_hit, find_intersections, find_many_intersections, Intersect, Surface};
     use crate::objects::sphere::Sphere;
-    use crate::testutil::assert_point_eq;
+    use crate::testutil::{assert_point_eq, assert_vector_eq};
     use crate::transform::{scaling, translation};
 
     #[test]
@@ -206,5 +218,16 @@ mod tests {
 
         let xs = sphere.intersect(&ray);
         assert_eq!(xs.len(), 0);
+    }
+
+    #[test]
+    fn computing_the_normal_on_a_translated_sphere() {
+        let mut s = Sphere::new_unit();
+        s.set_transformation(translation(0.0, 1.0, 0.0));
+        let pt = Point::new(0.0, 1.0 + std::f64::consts::FRAC_1_SQRT_2, -std::f64::consts::FRAC_1_SQRT_2);
+        let expected = Vector::new(0.0, std::f64::consts::FRAC_1_SQRT_2, -std::f64::consts::FRAC_1_SQRT_2);
+        let actual = s.normal_at(pt);
+
+        assert_vector_eq(actual, expected);
     }
 }

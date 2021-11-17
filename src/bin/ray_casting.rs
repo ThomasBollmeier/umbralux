@@ -4,7 +4,7 @@ use umbralux::core::{Color, Point, Vector};
 use umbralux::io::export_as_ppm;
 use umbralux::objects::ray::Ray;
 use umbralux::objects::sphere::Sphere;
-use umbralux::objects::intersect::Intersect;
+use umbralux::objects::object3d::Intersect;
 use umbralux::transform::{scaling, translation};
 
 struct WorldSize {
@@ -44,8 +44,9 @@ fn main() -> Result<()> {
     let mut canvas = Canvas::with_background(csize.width, csize.height, bg_color);
 
     for row in 0..csize.height {
+        let y = row_to_y(row, &csize, &wsize);
         for col in 0..csize.width {
-            let (x, y) = grid_to_world(row, col, &csize, &wsize);
+            let x = col_to_x(col, &csize, &wsize);
             let direction = camera - Point::new(x, y, 0.0);
             if ray_hits_sphere(camera, direction, &sphere) {
                 canvas.set_pixel(col, row, fg_color);
@@ -58,17 +59,17 @@ fn main() -> Result<()> {
     Ok(())
 }
 
+fn row_to_y(row: usize, csize: &CanvasSize, wsize: &WorldSize) -> f64 {
+    wsize.y_max - row as f64 * (wsize.y_max - wsize.y_min) / (csize.height as f64 - 1.0)
+}
+
+fn col_to_x(col: usize, csize: &CanvasSize, wsize: &WorldSize) -> f64 {
+    wsize.x_min + col as f64 * (wsize.x_max - wsize.x_min) / (csize.width as f64 - 1.0)
+}
+
 fn ray_hits_sphere(camera: Point, direction: Vector, sphere: &Sphere) -> bool {
     let ray = Ray::new(camera, direction);
     let xs = sphere.intersect(&ray);
 
     !xs.is_empty()
-}
-
-fn grid_to_world(row: usize, col: usize, csize: &CanvasSize, wsize: &WorldSize) -> (f64, f64) {
-
-    let x = wsize.x_min + col as f64 * (wsize.x_max - wsize.x_min) / (csize.width as f64 - 1.0);
-    let y = wsize.y_max - row as f64 * (wsize.y_max - wsize.y_min) / (csize.height as f64 - 1.0);
-
-    (x, y)
 }

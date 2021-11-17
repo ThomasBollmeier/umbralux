@@ -1,6 +1,6 @@
 use std::any::Any;
 use std::rc::Rc;
-use crate::core::Point;
+use crate::core::{Point, Vector};
 use crate::objects::ray::Ray;
 
 pub trait Intersect {
@@ -78,4 +78,8 @@ impl Intersection {
         &self.partner.as_any().downcast_ref::<T>().unwrap()
     }
 
+}
+
+pub trait Surface {
+    fn normal_at(&self, pt: Point) -> Vector;
 }
