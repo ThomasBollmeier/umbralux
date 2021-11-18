@@ -60,7 +60,8 @@ impl Surface for Sphere {
         let t_inv = self.transformation.invert().unwrap();
         let pt_trans = transform(pt,&t_inv).unwrap();
         let normal_trans = pt_trans - self.origin;
-        let normal = transform(normal_trans, &self.transformation).unwrap();
+        let t = t_inv.transpose();
+        let normal = transform(normal_trans, &t).unwrap();
 
         normal.normalize()
     }
@@ -74,7 +75,7 @@ mod tests {
     use crate::objects::object3d::{find_hit, find_intersections, find_many_intersections, Intersect, Surface};
     use crate::objects::sphere::Sphere;
     use crate::testutil::{assert_point_eq, assert_vector_eq};
-    use crate::transform::{scaling, translation};
+    use crate::transform::{rotation_z, scaling, translation};
 
     #[test]
     fn ray_intersects_with_sphere_at_two_points() {
@@ -230,4 +231,17 @@ mod tests {
 
         assert_vector_eq(actual, expected);
     }
+
+
+    #[test]
+    fn computing_the_normal_on_a_transformed_sphere() {
+        let mut s = Sphere::new_unit();
+        s.set_transformation(scaling(1.0, 0.5, 1.0) * rotation_z(std::f64::consts::PI / 5.0));
+        let pt = Point::new(0.0, 0.5 * 2.0_f64.sqrt(), -0.5 * 2.0_f64.sqrt());
+        let expected = Vector::new(0.0, 0.9701425, -0.2425356);
+        let actual = s.normal_at(pt);
+
+        assert_vector_eq(actual, expected);
+    }
+
 }
