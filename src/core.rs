@@ -130,6 +130,11 @@ impl Vector {
             self.0 * other.1 - self.1 * other.0,
         )
     }
+
+    pub fn reflect(&self, surface: &Vector) -> Vector {
+        let surface_norm = surface.normalize();
+        *self - 2.0 * surface_norm * self.dot(surface_norm)
+    }
 }
 
 impl TryFrom<Matrix<f64>> for Vector {
@@ -365,6 +370,26 @@ mod tests {
         assert_vector_eq(v1.cross(v2), Vector::new(-1.0, 2.0, -1.0));
         assert_vector_eq(v2.cross(v1), Vector::new(1.0, -2.0, 1.0));
         assert_vector_eq(v1.cross(v1), Vector::new(0.0, 0.0, 0.0));
+    }
+
+    #[test]
+    fn reflecting_a_vector_approaching_at_45() {
+        let v = Vector::new(1.0, -1.0, 0.0);
+        let surface = Vector::new(0.0, 1.0, 0.0);
+        let expected = Vector::new(1.0, 1.0, 0.0);
+        let actual = v.reflect(&surface);
+
+        assert_vector_eq(expected, actual);
+    }
+
+    #[test]
+    fn reflecting_a_vector_off_a_slanted_surface() {
+        let v = Vector::new(0.0, -1.0, 0.0);
+        let surface = Vector::new(1.0, 1.0, 0.0);
+        let expected = Vector::new(1.0, 0.0, 0.0);
+        let actual = v.reflect(&surface);
+
+        assert_vector_eq(expected, actual);
     }
 
     #[test]
