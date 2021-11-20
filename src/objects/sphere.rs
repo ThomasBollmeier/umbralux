@@ -1,5 +1,6 @@
 use std::any::Any;
 use crate::core::{Point, Vector};
+use crate::features::material::{Material, MaterialBuilder};
 use crate::matrix::Matrix;
 use crate::objects::ray::Ray;
 use crate::objects::object3d::{Intersect, Surface};
@@ -10,12 +11,14 @@ pub struct Sphere {
     origin: Point,
     radius: f64,
     transformation: Matrix<f64>,
+    material: Material,
 }
 
 impl Sphere {
     pub fn new(origin: Point, radius: f64) -> Sphere {
         let transformation = Matrix::identity(4);
-        Sphere { origin, radius, transformation }
+        let material = MaterialBuilder::new().build();
+        Sphere { origin, radius, transformation, material }
     }
 
     pub fn new_unit() -> Sphere {
