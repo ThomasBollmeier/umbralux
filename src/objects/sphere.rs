@@ -3,7 +3,7 @@ use crate::core::{Point, Vector};
 use crate::features::material::{Material, MaterialBuilder};
 use crate::matrix::Matrix;
 use crate::objects::ray::Ray;
-use crate::objects::object3d::{Intersect, Surface};
+use crate::objects::object3d::{Intersect, MaterialObject, Surface};
 use crate::transform::transform;
 
 #[derive(PartialEq, Debug)]
@@ -27,6 +27,10 @@ impl Sphere {
 
     pub fn set_transformation(&mut self, transformation: Matrix<f64>) {
         self.transformation = transformation;
+    }
+
+    pub fn set_material(&mut self, material: Material) {
+        self.material = material;
     }
 }
 
@@ -67,6 +71,12 @@ impl Surface for Sphere {
         let normal = transform(normal_trans, &t).unwrap();
 
         normal.normalize()
+    }
+}
+
+impl MaterialObject for Sphere {
+    fn material(&self) -> Material {
+        self.material
     }
 }
 

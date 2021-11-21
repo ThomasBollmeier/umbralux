@@ -1,11 +1,20 @@
 use std::any::Any;
 use std::rc::Rc;
 use crate::core::{Point, Vector};
+use crate::features::material::Material;
 use crate::objects::ray::Ray;
 
 pub trait Intersect {
     fn as_any(&self) -> &dyn Any;
     fn intersect(&self, ray: &Ray) -> Vec<f64>;
+}
+
+pub trait Surface {
+    fn normal_at(&self, pt: Point) -> Vector;
+}
+
+pub trait MaterialObject {
+    fn material(&self) -> Material;
 }
 
 pub fn find_intersections(ray: &Rc<Ray>, partner: &Rc<dyn Intersect>) -> Vec<Intersection> {
@@ -78,8 +87,4 @@ impl Intersection {
         &self.partner.as_any().downcast_ref::<T>().unwrap()
     }
 
-}
-
-pub trait Surface {
-    fn normal_at(&self, pt: Point) -> Vector;
 }

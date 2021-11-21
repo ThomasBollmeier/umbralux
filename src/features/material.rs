@@ -56,7 +56,7 @@ impl MaterialBuilder {
 
 }
 
-#[derive(PartialEq, Debug)]
+#[derive(Copy, Clone, PartialEq, Debug)]
 pub struct Material {
     pub color: Color,
     pub ambient: f64,
