@@ -7,7 +7,7 @@ use umbralux::features::material::MaterialBuilder;
 use umbralux::io::export_as_ppm;
 use umbralux::objects::ray::Ray;
 use umbralux::objects::sphere::Sphere;
-use umbralux::objects::object3d::{find_hit, find_intersections, Intersect, MaterialObject, Surface};
+use umbralux::objects::object3d::{find_hit, find_intersections, Intersection, Object3D};
 use umbralux::transform::{scaling, translation};
 
 struct WorldSize {
@@ -37,7 +37,7 @@ fn main() -> Result<()> {
     };
 
     let camera = Point::new(0.0, 0.0, 10.0);
-    let sphere: Rc<dyn Intersect> = Rc::new(create_sphere());
+    let sphere: Rc<dyn Object3D> = Rc::new(create_sphere());
     let light = create_light();
 
     let bg_color = Color::new(0.0, 0.0, 0.0);
@@ -51,16 +51,7 @@ fn main() -> Result<()> {
             let ray = create_ray(x, y, camera);
             let hit_opt = find_hit(find_intersections(&ray, &sphere));
             if let Some(hit) = hit_opt {
-                let s = hit.partner_as::<Sphere>();
-                let pos = hit.position();
-                let surface = s.normal_at(pos);
-                let eye = -1.0 * ray.direction();
-                let color = lighting(
-                    &s.material(),
-                    &light,
-                    &pos,
-                    &eye,
-                    &surface);
+                let color = determine_color(&ray, &light, &hit);
                 canvas.set_pixel(col, row, color);
             }
         }
@@ -69,6 +60,20 @@ fn main() -> Result<()> {
     export_as_ppm(&canvas, "ray_casting.ppm")?;
 
     Ok(())
+}
+
+fn determine_color(ray: &Rc<Ray>, light: &PointLight, hit: &Intersection) -> Color {
+    let partner = hit.partner();
+    let pos = hit.position();
+    let surface = partner.normal_at(pos);
+    let eye = -1.0 * ray.direction();
+
+    lighting(
+        &partner.material(),
+        &light,
+        &pos,
+        &eye,
+        &surface)
 }
 
 fn create_sphere() -> Sphere {

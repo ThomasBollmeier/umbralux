@@ -3,7 +3,7 @@ use crate::core::{Point, Vector};
 use crate::features::material::{Material, MaterialBuilder};
 use crate::matrix::Matrix;
 use crate::objects::ray::Ray;
-use crate::objects::object3d::{Intersect, MaterialObject, Surface};
+use crate::objects::object3d::Object3D;
 use crate::transform::transform;
 
 #[derive(PartialEq, Debug)]
@@ -34,7 +34,8 @@ impl Sphere {
     }
 }
 
-impl Intersect for Sphere {
+impl Object3D for Sphere {
+
     fn as_any(&self) -> &dyn Any {
         self
     }
@@ -60,9 +61,7 @@ impl Intersect for Sphere {
 
         ret
     }
-}
 
-impl Surface for Sphere {
     fn normal_at(&self, pt: Point) -> Vector {
         let t_inv = self.transformation.invert().unwrap();
         let pt_trans = transform(pt,&t_inv).unwrap();
@@ -72,9 +71,7 @@ impl Surface for Sphere {
 
         normal.normalize()
     }
-}
 
-impl MaterialObject for Sphere {
     fn material(&self) -> Material {
         self.material
     }
@@ -85,7 +82,7 @@ mod tests {
     use std::rc::Rc;
     use crate::objects::ray::Ray;
     use crate::core::{Vector, Point};
-    use crate::objects::object3d::{find_hit, find_intersections, find_many_intersections, Intersect, Surface};
+    use crate::objects::object3d::{find_hit, find_intersections, find_many_intersections, Object3D};
     use crate::objects::sphere::Sphere;
     use crate::testutil::{assert_point_eq, assert_vector_eq};
     use crate::transform::{rotation_z, scaling, translation};
@@ -157,7 +154,7 @@ mod tests {
     fn intersection_with_sphere_at_two_points() {
 
         let rc_r = Rc::new(Ray::new(Point::new(0.0, 0.0, -5.0), Vector::new(0.0, 0.0, 1.0)));
-        let rc_s: Rc<dyn Intersect> = Rc::new(Sphere::new(Point::new(0.0, 0.0, 0.0), 1.0));
+        let rc_s: Rc<dyn Object3D> = Rc::new(Sphere::new(Point::new(0.0, 0.0, 0.0), 1.0));
 
         let intersections = find_intersections(&rc_r, &rc_s);
 
@@ -177,8 +174,8 @@ mod tests {
     fn hit_for_all_positive_intersections() {
 
         let rc_r = Rc::new(Ray::new(Point::new(0.0, 0.0, -5.0), Vector::new(0.0, 0.0, 1.0)));
-        let rc_s1: Rc<dyn Intersect> = Rc::new(Sphere::new(Point::new(0.0, 0.0, 0.0), 1.0));
-        let rc_s2: Rc<dyn Intersect> = Rc::new(Sphere::new(Point::new(0.0, 0.0, 3.0), 1.0));
+        let rc_s1: Rc<dyn Object3D> = Rc::new(Sphere::new(Point::new(0.0, 0.0, 0.0), 1.0));
+        let rc_s2: Rc<dyn Object3D> = Rc::new(Sphere::new(Point::new(0.0, 0.0, 3.0), 1.0));
 
         let hit = find_hit(find_many_intersections(&rc_r, &vec![&rc_s1, &rc_s2]));
         assert!(hit.is_some());
@@ -190,8 +187,8 @@ mod tests {
     fn hit_for_all_negative_intersections() {
 
         let rc_r = Rc::new(Ray::new(Point::new(0.0, 0.0, -5.0), Vector::new(0.0, 0.0, 1.0)));
-        let rc_s1: Rc<dyn Intersect> = Rc::new(Sphere::new(Point::new(0.0, 0.0, -7.0), 1.0));
-        let rc_s2: Rc<dyn Intersect> = Rc::new(Sphere::new(Point::new(0.0, 0.0, -10.0), 1.0));
+        let rc_s1: Rc<dyn Object3D> = Rc::new(Sphere::new(Point::new(0.0, 0.0, -7.0), 1.0));
+        let rc_s2: Rc<dyn Object3D> = Rc::new(Sphere::new(Point::new(0.0, 0.0, -10.0), 1.0));
 
         let hit = find_hit(find_many_intersections(&rc_r, &vec![&rc_s1, &rc_s2]));
         assert!(hit.is_none());
@@ -201,10 +198,10 @@ mod tests {
     fn hit_for_some_positive_intersections() {
 
         let rc_r = Rc::new(Ray::new(Point::new(0.0, 0.0, -5.0), Vector::new(0.0, 0.0, 1.0)));
-        let rc_s1: Rc<dyn Intersect> = Rc::new(Sphere::new(Point::new(0.0, 0.0, 3.0), 1.0));
-        let rc_s2: Rc<dyn Intersect> = Rc::new(Sphere::new(Point::new(0.0, 0.0, -7.0), 1.0));
-        let rc_s3: Rc<dyn Intersect> = Rc::new(Sphere::new(Point::new(0.0, 0.0, 0.0), 1.0));
-        let rc_s4: Rc<dyn Intersect> = Rc::new(Sphere::new(Point::new(0.0, 0.0, -10.0), 1.0));
+        let rc_s1: Rc<dyn Object3D> = Rc::new(Sphere::new(Point::new(0.0, 0.0, 3.0), 1.0));
+        let rc_s2: Rc<dyn Object3D> = Rc::new(Sphere::new(Point::new(0.0, 0.0, -7.0), 1.0));
+        let rc_s3: Rc<dyn Object3D> = Rc::new(Sphere::new(Point::new(0.0, 0.0, 0.0), 1.0));
+        let rc_s4: Rc<dyn Object3D> = Rc::new(Sphere::new(Point::new(0.0, 0.0, -10.0), 1.0));
 
         let hit = find_hit(find_many_intersections(&rc_r, &vec![&rc_s1, &rc_s2, &rc_s3, &rc_s4]));
         assert!(hit.is_some());

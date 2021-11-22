@@ -4,26 +4,20 @@ use crate::core::{Point, Vector};
 use crate::features::material::Material;
 use crate::objects::ray::Ray;
 
-pub trait Intersect {
+pub trait Object3D {
     fn as_any(&self) -> &dyn Any;
     fn intersect(&self, ray: &Ray) -> Vec<f64>;
-}
-
-pub trait Surface {
     fn normal_at(&self, pt: Point) -> Vector;
-}
-
-pub trait MaterialObject {
     fn material(&self) -> Material;
 }
 
-pub fn find_intersections(ray: &Rc<Ray>, partner: &Rc<dyn Intersect>) -> Vec<Intersection> {
+pub fn find_intersections(ray: &Rc<Ray>, partner: &Rc<dyn Object3D>) -> Vec<Intersection> {
     partner.intersect(ray).iter().map(|t| {
         Intersection::new(ray, *t, partner)
     }).collect()
 }
 
-pub fn find_many_intersections(ray: &Rc<Ray>, partners: &Vec<&Rc<dyn Intersect>>) -> Vec<Intersection> {
+pub fn find_many_intersections(ray: &Rc<Ray>, partners: &Vec<&Rc<dyn Object3D>>) -> Vec<Intersection> {
     let mut ret: Vec<Intersection> = vec![];
 
     for partner in partners {
@@ -58,12 +52,12 @@ pub fn find_hit(intersections: Vec<Intersection>) -> Option<Intersection> {
 pub struct Intersection {
     ray: Rc<Ray>,
     t: f64,
-    partner: Rc<dyn Intersect>,
+    partner: Rc<dyn Object3D>,
 }
 
 impl Intersection {
 
-    fn new(ray: &Rc<Ray>, t:f64, partner: &Rc<dyn Intersect>) -> Self {
+    fn new(ray: &Rc<Ray>, t:f64, partner: &Rc<dyn Object3D>) -> Self {
         Intersection {
             ray: ray.clone(),
             t,
@@ -79,11 +73,11 @@ impl Intersection {
         self.ray.position(self.t)
     }
 
-    pub fn partner(&self) -> &Rc<dyn Intersect> {
+    pub fn partner(&self) -> &Rc<dyn Object3D> {
         &self.partner
     }
 
-    pub fn partner_as<T: 'static + Intersect>(&self) -> &T {
+    pub fn partner_as<T: 'static + Object3D>(&self) -> &T {
         &self.partner.as_any().downcast_ref::<T>().unwrap()
     }
 
