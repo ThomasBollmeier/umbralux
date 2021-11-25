@@ -1,6 +1,7 @@
 use std::rc::Rc;
 use crate::features::light::PointLight;
-use crate::objects::object3d::Object3D;
+use crate::objects::object3d::{find_many_intersections, Intersection, Object3D};
+use crate::objects::ray::Ray;
 
 pub struct World {
     objects: Vec<Rc<dyn Object3D>>,
@@ -40,15 +41,24 @@ impl World {
         self.objects.push(object.clone());
     }
 
+    pub fn find_intersections(&self, ray: &Rc<Ray>) -> Vec<Intersection> {
+        let mut intersections = find_many_intersections(ray, &self.objects);
+        intersections.sort_by(|i_a, i_b| {
+            i_a.parameter().partial_cmp(&i_b.parameter()).unwrap()
+        });
+
+        intersections
+    }
 }
 
 #[cfg(test)]
 mod tests {
     use std::rc::Rc;
-    use crate::core::{Color, Point};
+    use crate::core::{Color, Point, Vector};
     use crate::features::light::PointLight;
     use crate::features::material::MaterialBuilder;
     use crate::objects::object3d::Object3D;
+    use crate::objects::ray::Ray;
     use crate::objects::sphere::Sphere;
     use crate::objects::world::World;
     use crate::transform::scaling;
@@ -75,6 +85,24 @@ mod tests {
         assert!(world.contains_light(&light));
         assert!(world.contains_object::<Sphere>(&s1));
         assert!(world.contains_object::<Sphere>(&s2));
+    }
+
+    #[test]
+    fn intersect_a_world_with_a_ray() {
+
+        let world = create_default_world();
+        let ray = Rc::new(Ray::new(
+            Point::new(0.0, 0.0, -5.0),
+            Vector::new(0.0, 0.0, 1.0)));
+
+        let intersects = world.find_intersections(&ray);
+
+        assert_eq!(intersects.len(), 4);
+        assert_float_absolute_eq!(intersects[0].parameter(), 4.0);
+        assert_float_absolute_eq!(intersects[1].parameter(), 4.5);
+        assert_float_absolute_eq!(intersects[2].parameter(), 5.5);
+        assert_float_absolute_eq!(intersects[3].parameter(), 6.0);
+
     }
 
     fn create_light() -> PointLight {
@@ -114,6 +142,14 @@ mod tests {
         world.add_object(sphere_2);
 
         world
+    }
+
+    fn create_default_world() -> World {
+        let light = Rc::new(create_light());
+        let s1: Rc<dyn Object3D> = Rc::new(create_first_sphere());
+        let s2: Rc<dyn Object3D> = Rc::new(create_second_sphere());
+
+        create_world(&light, &s1, &s2)
     }
 
 }

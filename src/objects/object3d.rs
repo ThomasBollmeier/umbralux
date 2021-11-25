@@ -17,11 +17,11 @@ pub fn find_intersections(ray: &Rc<Ray>, partner: &Rc<dyn Object3D>) -> Vec<Inte
     }).collect()
 }
 
-pub fn find_many_intersections(ray: &Rc<Ray>, partners: &Vec<&Rc<dyn Object3D>>) -> Vec<Intersection> {
+pub fn find_many_intersections(ray: &Rc<Ray>, partners: &Vec<Rc<dyn Object3D>>) -> Vec<Intersection> {
     let mut ret: Vec<Intersection> = vec![];
 
     for partner in partners {
-        let mut intersections = find_intersections(ray, *partner);
+        let mut intersections = find_intersections(ray, partner);
         ret.append(&mut intersections);
     }
 

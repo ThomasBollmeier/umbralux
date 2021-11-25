@@ -177,7 +177,9 @@ mod tests {
         let rc_s1: Rc<dyn Object3D> = Rc::new(Sphere::new(Point::new(0.0, 0.0, 0.0), 1.0));
         let rc_s2: Rc<dyn Object3D> = Rc::new(Sphere::new(Point::new(0.0, 0.0, 3.0), 1.0));
 
-        let hit = find_hit(find_many_intersections(&rc_r, &vec![&rc_s1, &rc_s2]));
+        let hit = find_hit(find_many_intersections(
+            &rc_r,
+            &vec![rc_s1.clone(), rc_s2.clone()]));
         assert!(hit.is_some());
         let s1 = rc_s1.as_any().downcast_ref::<Sphere>().unwrap();
         assert_eq!(s1, hit.unwrap().partner_as::<Sphere>());
@@ -190,7 +192,8 @@ mod tests {
         let rc_s1: Rc<dyn Object3D> = Rc::new(Sphere::new(Point::new(0.0, 0.0, -7.0), 1.0));
         let rc_s2: Rc<dyn Object3D> = Rc::new(Sphere::new(Point::new(0.0, 0.0, -10.0), 1.0));
 
-        let hit = find_hit(find_many_intersections(&rc_r, &vec![&rc_s1, &rc_s2]));
+        let hit = find_hit(find_many_intersections(
+            &rc_r, &vec![rc_s1.clone(), rc_s2.clone()]));
         assert!(hit.is_none());
     }
 
@@ -203,7 +206,13 @@ mod tests {
         let rc_s3: Rc<dyn Object3D> = Rc::new(Sphere::new(Point::new(0.0, 0.0, 0.0), 1.0));
         let rc_s4: Rc<dyn Object3D> = Rc::new(Sphere::new(Point::new(0.0, 0.0, -10.0), 1.0));
 
-        let hit = find_hit(find_many_intersections(&rc_r, &vec![&rc_s1, &rc_s2, &rc_s3, &rc_s4]));
+        let hit = find_hit(find_many_intersections(
+            &rc_r,
+            &vec![
+                rc_s1.clone(),
+                rc_s2.clone(),
+                rc_s3.clone(),
+                rc_s4.clone()]));
         assert!(hit.is_some());
         let s3 = rc_s3.as_any().downcast_ref::<Sphere>().unwrap();
         assert_eq!(s3, hit.unwrap().partner_as::<Sphere>());
