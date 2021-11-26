@@ -57,10 +57,11 @@ mod tests {
     use crate::core::{Color, Point, Vector};
     use crate::features::light::PointLight;
     use crate::features::material::MaterialBuilder;
-    use crate::objects::object3d::Object3D;
+    use crate::objects::object3d::{find_hit, find_intersections, Object3D};
     use crate::objects::ray::Ray;
     use crate::objects::sphere::Sphere;
     use crate::objects::world::World;
+    use crate::testutil::{assert_point_eq, assert_vector_eq};
     use crate::transform::scaling;
 
     #[test]
@@ -105,6 +106,42 @@ mod tests {
 
     }
 
+    #[test]
+    fn precomputing_the_state_of_an_intersection() {
+
+        let ray = Rc::new(Ray::new(
+          Point::new(0.0, 0.0, -5.0),
+            Vector::new(0.0, 0.0,1.0)));
+        let shape: Rc<dyn Object3D> = Rc::new(Sphere::new_unit());
+        let hit = find_hit(find_intersections(&ray, &shape)).unwrap();
+
+        let comp_res = hit.prepare_computations();
+
+        assert_eq!(comp_res.t, hit.parameter());
+        assert_point_eq(comp_res.point, Point::new(0.0, 0.0, -1.0));
+        assert_vector_eq(comp_res.eye_dir, Vector::new(0.0, 0.0, -1.0));
+        assert_vector_eq(comp_res.normal, Vector::new(0.0, 0.0, -1.0));
+        assert!(!comp_res.inside);
+    }
+
+    #[test]
+    fn intersection_occurs_on_the_inside() {
+
+        let ray = Rc::new(Ray::new(
+            Point::new(0.0, 0.0, 0.0),
+            Vector::new(0.0, 0.0,1.0)));
+        let shape: Rc<dyn Object3D> = Rc::new(Sphere::new_unit());
+        let hit = find_hit(find_intersections(&ray, &shape)).unwrap();
+
+        let comp_res = hit.prepare_computations();
+
+        assert_eq!(comp_res.t, hit.parameter());
+        assert_point_eq(comp_res.point, Point::new(0.0, 0.0, 1.0));
+        assert_vector_eq(comp_res.eye_dir, Vector::new(0.0, 0.0, -1.0));
+        assert_vector_eq(comp_res.normal, Vector::new(0.0, 0.0, -1.0));
+        assert!(comp_res.inside);
+    }
+
     fn create_light() -> PointLight {
         let light = PointLight{
             intensity: Color::new(1.0, 1.0, 1.0),
@@ -115,22 +152,22 @@ mod tests {
     }
 
     fn create_first_sphere() -> Sphere {
-        let mut s = Sphere::new_unit();
+        let mut sphere = Sphere::new_unit();
         let material = MaterialBuilder::new()
             .color(Color::new(0.8, 1.0, 0.6))
             .diffuse(0.7)
             .specular(0.2)
             .build();
-        s.set_material(material);
+        sphere.set_material(material);
 
-        s
+        sphere
     }
 
     fn create_second_sphere() -> Sphere {
-        let mut s = Sphere::new_unit();
-        s.set_transformation(scaling(0.5, 0.5, 0.5));
+        let mut sphere = Sphere::new_unit();
+        sphere.set_transformation(scaling(0.5, 0.5, 0.5));
 
-        s
+        sphere
     }
 
     fn create_world(light: &Rc<PointLight>,

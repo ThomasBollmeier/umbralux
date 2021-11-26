@@ -81,4 +81,35 @@ impl Intersection {
         &self.partner.as_any().downcast_ref::<T>().unwrap()
     }
 
+    pub fn prepare_computations(&self) -> ComputationResult {
+        let pt = self.ray.position(self.t);
+        let eye_dir = -1.0 * self.ray.direction().normalize();
+        let mut normal = self.partner.normal_at(pt).normalize();
+        let inside = eye_dir.dot(normal) < 0.0;
+
+        if inside {
+            normal = -1.0 * normal;
+        }
+
+        ComputationResult{
+            t: self.t,
+            ray: self.ray.clone(),
+            object: self.partner.clone(),
+            point: pt,
+            eye_dir,
+            normal,
+            inside
+        }
+    }
+
+}
+
+pub struct ComputationResult {
+    pub t: f64,
+    pub ray: Rc<Ray>,
+    pub object: Rc<dyn Object3D>,
+    pub point: Point,
+    pub eye_dir: Vector,
+    pub normal: Vector,
+    pub inside: bool,
 }
