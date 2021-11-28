@@ -29,9 +29,6 @@ impl Sphere {
         self.transformation = transformation;
     }
 
-    pub fn set_material(&mut self, material: Material) {
-        self.material = material;
-    }
 }
 
 impl Object3D for Sphere {
@@ -74,6 +71,10 @@ impl Object3D for Sphere {
 
     fn material(&self) -> Material {
         self.material
+    }
+
+    fn set_material(&mut self, material: Material) {
+        self.material = material;
     }
 }
 
