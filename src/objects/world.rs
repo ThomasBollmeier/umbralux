@@ -59,10 +59,6 @@ impl World {
         &self.objects
     }
 
-    pub fn get_objects_mut(&mut self) -> &mut Vec<Rc<dyn Object3D>> {
-        &mut self.objects
-    }
-
     pub fn shade_hit(&self, comp_res: &ComputationResult) -> Color {
         lighting(
             &comp_res.object.material(),
@@ -236,11 +232,10 @@ mod tests {
 
     #[test]
     fn the_color_with_an_intersection_behind() {
-        /*
-        let mut world = create_default_world();
-        let mut objects = world.get_objects_mut();
+        let world = create_default_world();
+        let objects = world.get_objects();
 
-        let mut outer_obj = &objects[0];
+        let outer_obj = &objects[0];
         let outer_mat = MaterialBuilder::new()
             .color(outer_obj.material().color)
             .ambient(1.0)
@@ -248,9 +243,9 @@ mod tests {
             .specular(0.0)
             .shininess(0.0)
             .build();
-        outer_obj.set_material(outer_mat);
+        outer_obj.change_material(outer_mat);
 
-        let mut inner_obj = &objects[1];
+        let inner_obj = &objects[1];
         let inner_mat = MaterialBuilder::new()
             .color(inner_obj.material().color)
             .ambient(1.0)
@@ -258,7 +253,7 @@ mod tests {
             .specular(0.0)
             .shininess(0.0)
             .build();
-        inner_obj.set_material(inner_mat);
+        inner_obj.change_material(inner_mat);
 
         let ray = Rc::new(Ray::new(
             Point::new(0.0, 0.0, 0.75),
@@ -269,7 +264,6 @@ mod tests {
         let expected_color = inner_mat.color;
 
         assert_color_eq(expected_color, actual_color);
-         */
     }
 
     fn create_light() -> PointLight {
@@ -282,13 +276,13 @@ mod tests {
     }
 
     fn create_first_sphere() -> Sphere {
-        let mut sphere = Sphere::new_unit();
+        let sphere = Sphere::new_unit();
         let material = MaterialBuilder::new()
             .color(Color::new(0.8, 1.0, 0.6))
             .diffuse(0.7)
             .specular(0.2)
             .build();
-        sphere.set_material(material);
+        sphere.change_material(material);
 
         sphere
     }

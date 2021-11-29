@@ -9,7 +9,7 @@ pub trait Object3D {
     fn intersect(&self, ray: &Ray) -> Vec<f64>;
     fn normal_at(&self, pt: Point) -> Vector;
     fn material(&self) -> Material;
-    fn set_material(&mut self, material: Material);
+    fn change_material(&self, material: Material);
 }
 
 pub fn find_intersections(ray: &Rc<Ray>, partner: &Rc<dyn Object3D>) -> Vec<Intersection> {

@@ -1,4 +1,6 @@
 use std::any::Any;
+use std::cell::RefCell;
+use std::ops::Deref;
 use crate::core::{Point, Vector};
 use crate::features::material::{Material, MaterialBuilder};
 use crate::matrix::Matrix;
@@ -11,14 +13,14 @@ pub struct Sphere {
     origin: Point,
     radius: f64,
     transformation: Matrix<f64>,
-    material: Material,
+    material: RefCell<Material>,
 }
 
 impl Sphere {
     pub fn new(origin: Point, radius: f64) -> Sphere {
         let transformation = Matrix::identity(4);
         let material = MaterialBuilder::new().build();
-        Sphere { origin, radius, transformation, material }
+        Sphere { origin, radius, transformation, material: RefCell::new(material) }
     }
 
     pub fn new_unit() -> Sphere {
@@ -70,11 +72,11 @@ impl Object3D for Sphere {
     }
 
     fn material(&self) -> Material {
-        self.material
+        self.material.borrow().deref().clone()
     }
 
-    fn set_material(&mut self, material: Material) {
-        self.material = material;
+    fn change_material(&self, material: Material) {
+        self.material.replace(material);
     }
 }
 

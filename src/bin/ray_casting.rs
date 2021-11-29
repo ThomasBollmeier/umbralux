@@ -82,7 +82,7 @@ fn create_sphere() -> Sphere {
     let material = MaterialBuilder::new()
         .color(Color::new(1.0, 0.2, 1.0))
         .build();
-    sphere.set_material(material);
+    sphere.change_material(material);
     sphere
 }
 
