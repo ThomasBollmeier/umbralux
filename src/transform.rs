@@ -1,6 +1,7 @@
 use crate::matrix::Matrix;
 use crate::{Result, Error};
 use std::convert::TryFrom;
+use crate::core::{Point, Vector};
 
 pub fn transform<T>(value: T, trans: &Matrix<f64>) -> Result<T>
     where Matrix<f64>: From<T>, T: TryFrom<Matrix<f64>>
@@ -79,6 +80,23 @@ pub fn shearing(xy: f64, xz: f64, yx:f64, yz: f64, zx: f64, zy: f64) -> Matrix<f
     ret
 }
 
+pub fn view_transform(from: Point, to: Point, up: Vector) -> Matrix<f64> {
+
+    let forward = (to - from).normalize();
+    let upn = up.normalize();
+    let left = forward.cross(upn);
+    let true_up = left.cross(forward);
+
+    let orientation = Matrix::from_elements(&vec![
+        vec![left.x(), left.y(), left.z(), 0.0],
+        vec![true_up.x(), true_up.y(), true_up.z(), 0.0],
+        vec![-forward.x(), -forward.y(), -forward.z(), 0.0],
+        vec![0.0, 0.0, 0.0, 1.0]
+    ]).unwrap();
+
+    orientation.multiply(&translation(-from.x(), -from.y(), -from.z())).unwrap()
+}
+
 // ============================================================================
 
 #[cfg(test)]
@@ -86,8 +104,9 @@ mod tests {
     use crate::core::{Point, Vector};
     use super::{translation, transform};
     use crate::testutil::*;
-    use crate::transform::{scaling, rotation_x, rotation_y, rotation_z, shearing};
+    use crate::transform::{scaling, rotation_x, rotation_y, rotation_z, shearing, view_transform};
     use std::f64::consts::PI;
+    use crate::matrix::Matrix;
 
     #[test]
     fn translate_point() {
@@ -201,5 +220,47 @@ mod tests {
         let p5 = transform(p, &d).unwrap();
 
         assert_point_eq(p4, p5);
+    }
+
+    #[test]
+    fn the_transformation_matrix_for_the_default_transformation() {
+        let from = Point::new(0.0, 0.0, 0.0);
+        let to = Point::new(0.0, 0.0, -1.0);
+        let up = Vector::new(0.0, 1.0, 0.0);
+
+        let expected = Matrix::<f64>::identity(4);
+        let actual = view_transform(from, to, up);
+
+        assert_matrix_float_eq(&expected, &actual);
+    }
+
+    #[test]
+    fn a_view_transformation_matrix_looking_in_positive_z_direction() {
+        let from = Point::new(0.0, 0.0, 0.0);
+        let to = Point::new(0.0, 0.0, 1.0);
+        let up = Vector::new(0.0, 1.0, 0.0);
+
+        let expected = scaling(-1.0, 1.0, -1.0);
+        let actual = view_transform(from, to, up);
+
+        assert_matrix_float_eq(&expected, &actual);
+    }
+
+    #[test]
+    fn an_arbitrary_view_transformation() {
+        let from = Point::new(1.0, 3.0, 2.0);
+        let to = Point::new(4.0, -2.0, 8.0);
+        let up = Vector::new(1.0, 1.0, 0.0);
+
+        let expected = Matrix::from_elements(&vec![
+            vec![-0.50709, 0.50709, 0.67612, -2.36643],
+            vec![0.76772, 0.60609, 0.12122, -2.82843],
+            vec![-0.35857, 0.59761, -0.71714, 0.00000],
+            vec![0.00000, 0.00000, 0.00000, 1.00000],
+        ]).unwrap();
+
+        let actual = view_transform(from, to, up);
+
+        assert_matrix_float_eq(&expected, &actual);
     }
 }
