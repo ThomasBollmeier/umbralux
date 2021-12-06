@@ -1,6 +1,9 @@
+use std::rc::Rc;
+use crate::canvas::Canvas;
 use crate::core::Point;
 use crate::matrix::Matrix;
 use crate::objects::ray::Ray;
+use crate::objects::world::World;
 use crate::transform::transform;
 
 pub struct Camera {
@@ -91,16 +94,31 @@ impl Camera {
         Ray::new(origin, direction)
     }
 
+    pub fn render(&self, world: &World) -> Canvas {
+        let mut ret = Canvas::new(self.hsize, self.vsize);
+        let mut ray: Rc<Ray>;
+
+        for y in 0..self.vsize {
+            for x in 0..self.hsize {
+                ray = Rc::new(self.ray_for_pixel(x, y));
+                ret.set_pixel(x, y, world.color_at_ray_hit(&ray));
+            }
+        }
+
+        ret
+    }
+
 }
 
 #[cfg(test)]
 mod tests {
     use crate::camera::Camera;
-    use crate::core::{Point, Vector};
+    use crate::core::{Color, Point, Vector};
     use crate::matrix::Matrix;
     use crate::objects::ray::Ray;
-    use crate::testutil::{assert_matrix_float_eq, assert_point_eq, assert_vector_eq};
-    use crate::transform::{rotation_y, translation};
+    use crate::objects::world::tests;
+    use crate::testutil::{assert_color_eq, assert_matrix_float_eq, assert_point_eq, assert_vector_eq};
+    use crate::transform::{rotation_y, translation, view_transform};
 
     #[test]
     fn constructing_a_camera() {
@@ -178,5 +196,29 @@ mod tests {
                         ray.origin());
         assert_vector_eq(Vector::new(2.0_f64.sqrt() * 0.5, 0.0, -2.0_f64.sqrt() * 0.5),
                          ray.direction());
+    }
+
+    #[test]
+    fn rendering_a_world_with_a_camera() {
+
+        let world = tests::create_default_world();
+
+        let mut camera = Camera::new(11, 11, std::f64::consts::FRAC_PI_2);
+
+        let from = Point::new(0.0, 0.0, -5.0);
+        let to = Point::new(0.0, 0.0, 0.0);
+        let up = Vector::new(0.0, 1.0, 0.0);
+        camera.set_transformation(view_transform(from, to, up));
+
+        let image = camera.render(&world);
+
+        let expected = Color::new(0.38066, 0.47583, 0.2855);
+        let actual = image.get_pixel(5, 5);
+
+        assert_color_eq(expected, actual);
+
+
+
+
     }
 }

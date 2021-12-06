@@ -81,7 +81,7 @@ impl World {
 }
 
 #[cfg(test)]
-mod tests {
+pub(crate) mod tests {
     use std::rc::Rc;
     use crate::core::{Color, Point, Vector};
     use crate::features::light::PointLight;
@@ -305,7 +305,7 @@ mod tests {
         world
     }
 
-    fn create_default_world() -> World {
+    pub fn create_default_world() -> World {
         let light = Rc::new(create_light());
         let s1: Rc<dyn Object3D> = Rc::new(create_first_sphere());
         let s2: Rc<dyn Object3D> = Rc::new(create_second_sphere());
