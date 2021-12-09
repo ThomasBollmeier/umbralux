@@ -1,6 +1,6 @@
 use crate::canvas::Canvas;
 use std::fs::File;
-use std::io::{Result, Write};
+use std::io::{BufWriter, Result, Write};
 use std::path::Path;
 
 pub fn export_as_ppm(canvas: &Canvas, file_name: &str) -> Result<()> {
@@ -86,15 +86,55 @@ fn append(
 }
 
 fn color_value_to_ppm_str(color: f64, max_color_value: i32) -> String {
+    format!("{}", color_value(color, max_color_value))
+}
+
+fn color_value(color: f64, max_color_value: i32) -> i32 {
     if color >= 0.0 {
         let mut scaled = (color * max_color_value as f64).round() as i32;
         if scaled > max_color_value {
             scaled = max_color_value;
         }
-        format!("{}", scaled)
+        scaled
     } else {
-        "0".to_string()
+        0
     }
+}
+
+pub fn export_as_png(canvas: &Canvas, file_name: &str) -> Result<()> {
+
+    let max_color_value = 255;
+
+    let path = Path::new(file_name);
+    let file = File::create(path)?;
+    let ref mut buf_writer = BufWriter::new(file);
+    let (width, height) = canvas.get_dimension();
+
+    let mut encoder = png::Encoder::new(
+        buf_writer,
+        width as u32,
+        height as u32);
+    encoder.set_color(png::ColorType::Rgb);
+    encoder.set_depth(png::BitDepth::Eight);
+
+    let mut writer = encoder.write_header()?;
+    let mut pixels: Vec<u8> = Vec::new();
+
+    for y in 0..height {
+        for x in 0..width {
+            let color = canvas.get_pixel(x, y);
+            let red = color_value(color.red(), max_color_value) as u8;
+            let green = color_value(color.green(), max_color_value) as u8;
+            let blue = color_value(color.blue(), max_color_value) as u8;
+            pixels.push(red);
+            pixels.push(green);
+            pixels.push(blue);
+        }
+    }
+
+    writer.write_image_data(&pixels)?;
+
+    Ok(())
 }
 
 // ============================================================================

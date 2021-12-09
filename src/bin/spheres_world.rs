@@ -5,7 +5,7 @@ use umbralux::camera::Camera;
 use umbralux::core::{Color, Point, Vector};
 use umbralux::features::light::PointLight;
 use umbralux::features::material::MaterialBuilder;
-use umbralux::io::export_as_ppm;
+use umbralux::io::{export_as_png, export_as_ppm};
 use umbralux::objects::object3d::Object3D;
 use umbralux::objects::sphere::Sphere;
 use umbralux::objects::world::World;
@@ -36,6 +36,8 @@ fn main() -> Result<()> {
     let canvas = camera.render(&world);
 
     export_as_ppm(&canvas, "spheres_world.ppm")?;
+
+    export_as_png(&canvas, "spheres_world.png")?;
 
     Ok(())
 }
