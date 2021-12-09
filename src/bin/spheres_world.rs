@@ -17,7 +17,6 @@ fn main() -> Result<()> {
 
     let floor = create_floor();
     world.add_object(&floor);
-
     world.add_object(&create_left_wall(&floor));
     world.add_object(&create_right_wall(&floor));
     world.add_object(&create_middle_sphere());

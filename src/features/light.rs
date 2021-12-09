@@ -12,7 +12,8 @@ pub fn lighting(
     light: &PointLight,
     position: &Point,
     camera: &Vector,
-    surface: &Vector
+    surface: &Vector,
+    in_shadow: bool
 ) -> Color {
 
     let normal = surface.normalize();
@@ -28,26 +29,27 @@ pub fn lighting(
     let mut diffuse = black;
     let mut specular = black;
 
-    // light_dot_normal reperesents the cosine of the angle between the light vector
-    // and the normal vector. A negative number means the light is on the outer side of
-    // the surface.
-    let light_dot_normal = light_v.dot(normal);
+    if !in_shadow {
+        // light_dot_normal reperesents the cosine of the angle between the light vector
+        // and the normal vector. A negative number means the light is on the outer side of
+        // the surface.
+        let light_dot_normal = light_v.dot(normal);
 
-    if light_dot_normal >= 0.0 {
-        // compute the diffuse contribution
-        diffuse = effective_color * material.diffuse * light_dot_normal;
+        if light_dot_normal >= 0.0 {
+            // compute the diffuse contribution
+            diffuse = effective_color * material.diffuse * light_dot_normal;
 
-        // reflect_dot_camera represents the cosine of the angle between the reflection
-        // vector and the camera vector. A negative number means the light reflects
-        // away from the camera.
-        let reflect_v = -1.0 * light_v.reflect(&normal);
-        let reflect_dot_camera = reflect_v.dot(*camera);
+            // reflect_dot_camera represents the cosine of the angle between the reflection
+            // vector and the camera vector. A negative number means the light reflects
+            // away from the camera.
+            let reflect_v = -1.0 * light_v.reflect(&normal);
+            let reflect_dot_camera = reflect_v.dot(*camera);
 
-        if reflect_dot_camera > 0.0 {
-            let factor = reflect_dot_camera.powf(material.shininess);
-            specular = light.intensity * material.specular * factor;
+            if reflect_dot_camera > 0.0 {
+                let factor = reflect_dot_camera.powf(material.shininess);
+                specular = light.intensity * material.specular * factor;
+            }
         }
-
     }
 
     ambient + diffuse + specular
@@ -76,7 +78,7 @@ mod tests {
             intensity: Color::new(1.0, 1.0, 1.0),
         };
         let expected = Color::new(1.9, 1.9, 1.9);
-        let actual = lighting(&material, &light, &position, &camera, &surface);
+        let actual = lighting(&material, &light, &position, &camera, &surface, false);
 
         assert_color_eq(expected, actual);
     }
@@ -91,7 +93,7 @@ mod tests {
             intensity: Color::new(1.0, 1.0, 1.0),
         };
         let expected = Color::new(1.0, 1.0, 1.0);
-        let actual = lighting(&material, &light, &position, &camera, &surface);
+        let actual = lighting(&material, &light, &position, &camera, &surface, false);
 
         assert_color_eq(expected, actual);
     }
@@ -107,7 +109,7 @@ mod tests {
         };
         let intensity = 0.1 + 0.9 * 0.5 * 2.0_f64.sqrt();
         let expected = Color::new(intensity, intensity, intensity);
-        let actual = lighting(&material, &light, &position, &camera, &surface);
+        let actual = lighting(&material, &light, &position, &camera, &surface, false);
 
         assert_color_eq(expected, actual);
     }
@@ -123,7 +125,7 @@ mod tests {
         };
         let intensity = 0.1 + 0.9 * 0.5 * 2.0_f64.sqrt() + 0.9;
         let expected = Color::new(intensity, intensity, intensity);
-        let actual = lighting(&material, &light, &position, &camera, &surface);
+        let actual = lighting(&material, &light, &position, &camera, &surface, false);
 
         assert_color_eq(expected, actual);
     }
@@ -139,9 +141,24 @@ mod tests {
         };
         let intensity = 0.1;
         let expected = Color::new(intensity, intensity, intensity);
-        let actual = lighting(&material, &light, &position, &camera, &surface);
+        let actual = lighting(&material, &light, &position, &camera, &surface, false);
 
         assert_color_eq(expected, actual);
     }
 
+    #[test]
+    fn lighting_with_the_surface_in_shadow() {
+        let (material, position) = init();
+        let camera = Vector::new(0.0, 0.0, -1.0);
+        let surface = Vector::new(0.0, 0.0, -1.0);
+        let light = PointLight{
+            position: Point::new(0.0, 0.0, -10.0),
+            intensity: Color::new(1.0, 1.0, 1.0),
+        };
+        let intensity = 0.1;
+        let expected = Color::new(intensity, intensity, intensity);
+        let actual = lighting(&material, &light, &position, &camera, &surface, true);
+
+        assert_color_eq(expected, actual);
+    }
 }

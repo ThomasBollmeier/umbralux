@@ -73,7 +73,8 @@ fn determine_color(ray: &Rc<Ray>, light: &PointLight, hit: &Intersection) -> Col
         &light,
         &pos,
         &eye,
-        &surface)
+        &surface,
+        false)
 }
 
 fn create_sphere() -> Sphere {
