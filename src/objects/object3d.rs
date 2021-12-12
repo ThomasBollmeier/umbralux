@@ -92,11 +92,14 @@ impl Intersection {
             normal = -1.0 * normal;
         }
 
+        let over_point = pt + normal * 1E-5;
+
         ComputationResult{
             t: self.t,
             ray: self.ray.clone(),
             object: self.partner.clone(),
             point: pt,
+            over_point,
             eye_dir,
             normal,
             inside
@@ -110,6 +113,7 @@ pub struct ComputationResult {
     pub ray: Rc<Ray>,
     pub object: Rc<dyn Object3D>,
     pub point: Point,
+    pub over_point: Point,
     pub eye_dir: Vector,
     pub normal: Vector,
     pub inside: bool,

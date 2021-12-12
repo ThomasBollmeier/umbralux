@@ -29,7 +29,7 @@ fn main() -> Result<()> {
     });
     world.set_light(&light);
 
-    let mut camera = Camera::new(400, 200, FRAC_PI_3);
+    let mut camera = Camera::new(100, 50, FRAC_PI_3);
     camera.set_transformation(view_transform(Point::new(0.0, 1.5, -5.8),
         Point::new(0.0, 1.0, 0.0), Vector::new(0.0, 1.0, 0.0)));
 

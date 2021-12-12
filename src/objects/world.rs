@@ -65,7 +65,7 @@ impl World {
         lighting(
             &comp_res.object.material(),
             &self.light.as_ref().unwrap(),
-            &comp_res.point,
+            &comp_res.over_point,
             &comp_res.eye_dir,
             &comp_res.normal,
             is_shadowed
@@ -111,7 +111,7 @@ pub(crate) mod tests {
     use crate::objects::sphere::Sphere;
     use crate::objects::world::World;
     use crate::testutil::{assert_color_eq, assert_point_eq, assert_vector_eq};
-    use crate::transform::scaling;
+    use crate::transform::{scaling, translation};
 
     #[test]
     fn creating_a_world() {
@@ -316,6 +316,48 @@ pub(crate) mod tests {
         let point = Point::new(-2.0, 2.0, -2.0);
 
         assert!(!world.is_shadowed(point));
+    }
+
+    #[test]
+    fn shade_hit_is_given_an_intersection_in_shadow() {
+        let mut world = create_default_world();
+
+        world.set_light(&Rc::new(PointLight{
+            intensity: Color::new(1.0, 1.0, 1.0),
+            position: Point::new(0.0, 0.0, -10.0),
+        }));
+
+        let sphere1: Rc<dyn Object3D> = Rc::new(Sphere::new_unit());
+        world.add_object(&sphere1);
+
+        let mut sphere2 = Sphere::new_unit();
+        sphere2.set_transformation(translation(0.0, 0.0, 10.0));
+        let sphere2: Rc<dyn Object3D> = Rc::new(sphere2);
+        world.add_object(&sphere2);
+
+        let ray = Rc::new(Ray::new(Point::new(0.0, 0.0, 5.0),
+            Vector::new(0.0, 0.0, 1.0)));
+
+        let hit = find_hit(find_intersections(&ray, &sphere2)).unwrap();
+        let actual_color = world.shade_hit(&hit.prepare_computations());
+        let expected_color = Color::new(0.1, 0.1, 0.1);
+
+        assert_color_eq(expected_color, actual_color);
+    }
+
+    #[test]
+    fn the_test_should_offset_the_point() {
+        let ray = Rc::new(Ray::new(Point::new(0.0,0.0, -5.0),
+            Vector::new(0.0, 0.0, 1.0)));
+
+        let mut sphere = Sphere::new_unit();
+        sphere.set_transformation(translation(0.0, 0.0, 1.0));
+        let sphere: Rc<dyn Object3D> = Rc::new(sphere);
+
+        let hit = find_hit(find_intersections(&ray, &sphere)).unwrap();
+        let comp_res = hit.prepare_computations();
+
+        assert!(comp_res.point.z() > comp_res.over_point.z());
     }
 
     fn create_light() -> PointLight {
