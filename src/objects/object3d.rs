@@ -92,7 +92,7 @@ impl Intersection {
             normal = -1.0 * normal;
         }
 
-        let over_point = pt + normal * 1E-5;
+        let over_point = pt + normal * 1.0E-5; // Acne correction
 
         ComputationResult{
             t: self.t,
