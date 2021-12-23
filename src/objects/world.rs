@@ -330,8 +330,8 @@ pub(crate) mod tests {
         let sphere1: Rc<dyn Object3D> = Rc::new(Sphere::new_unit());
         world.add_object(&sphere1);
 
-        let mut sphere2 = Sphere::new_unit();
-        sphere2.set_transformation(translation(0.0, 0.0, 10.0));
+        let sphere2 = Sphere::new_unit();
+        sphere2.change_transformation(translation(0.0, 0.0, 10.0));
         let sphere2: Rc<dyn Object3D> = Rc::new(sphere2);
         world.add_object(&sphere2);
 
@@ -350,8 +350,8 @@ pub(crate) mod tests {
         let ray = Rc::new(Ray::new(Point::new(0.0,0.0, -5.0),
             Vector::new(0.0, 0.0, 1.0)));
 
-        let mut sphere = Sphere::new_unit();
-        sphere.set_transformation(translation(0.0, 0.0, 1.0));
+        let sphere = Sphere::new_unit();
+        sphere.change_transformation(translation(0.0, 0.0, 1.0));
         let sphere: Rc<dyn Object3D> = Rc::new(sphere);
 
         let hit = find_hit(find_intersections(&ray, &sphere)).unwrap();
@@ -382,8 +382,8 @@ pub(crate) mod tests {
     }
 
     fn create_second_sphere() -> Sphere {
-        let mut sphere = Sphere::new_unit();
-        sphere.set_transformation(scaling(0.5, 0.5, 0.5));
+        let sphere = Sphere::new_unit();
+        sphere.change_transformation(scaling(0.5, 0.5, 0.5));
 
         sphere
     }

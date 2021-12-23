@@ -247,6 +247,14 @@ where T: Num + num_traits::Zero + One + Copy + Debug
     }
 }
 
+impl<T> Clone for Matrix<T>
+where T: Num + num_traits::Zero + num_traits::One + Copy + Debug
+{
+    fn clone(&self) -> Self {
+        Matrix::<T>::from_elements(&self.elements).unwrap()
+    }
+}
+
 // ============================================================================
 
 #[cfg(test)]

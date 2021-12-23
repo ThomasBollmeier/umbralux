@@ -12,7 +12,7 @@ use crate::transform::transform;
 pub struct Sphere {
     origin: Point,
     radius: f64,
-    transformation: Matrix<f64>,
+    transformation: RefCell<Matrix<f64>>,
     material: RefCell<Material>,
 }
 
@@ -20,17 +20,16 @@ impl Sphere {
     pub fn new(origin: Point, radius: f64) -> Sphere {
         let transformation = Matrix::identity(4);
         let material = MaterialBuilder::new().build();
-        Sphere { origin, radius, transformation, material: RefCell::new(material) }
+        Sphere {
+            origin,
+            radius,
+            transformation: RefCell::new(transformation),
+            material: RefCell::new(material) }
     }
 
     pub fn new_unit() -> Sphere {
         Sphere::new(Point::new(0.0, 0.0, 0.0), 1.0)
     }
-
-    pub fn set_transformation(&mut self, transformation: Matrix<f64>) {
-        self.transformation = transformation;
-    }
-
 }
 
 impl Object3D for Sphere {
@@ -42,7 +41,7 @@ impl Object3D for Sphere {
     fn intersect(&self, ray: &Ray) -> Vec<f64> {
         let mut ret = Vec::new();
 
-        let transformed_ray = ray.transform(&self.transformation.invert().unwrap());
+        let transformed_ray = ray.transform(&self.transformation().invert().unwrap());
         let a = transformed_ray.origin();
         let b = transformed_ray.direction();
         let c = self.origin;
@@ -62,7 +61,7 @@ impl Object3D for Sphere {
     }
 
     fn normal_at(&self, pt: Point) -> Vector {
-        let t_inv = self.transformation.invert().unwrap();
+        let t_inv = self.transformation().invert().unwrap();
         let pt_trans = transform(pt,&t_inv).unwrap();
         let normal_trans = pt_trans - self.origin;
         let t = t_inv.transpose();
@@ -78,6 +77,15 @@ impl Object3D for Sphere {
     fn change_material(&self, material: Material) {
         self.material.replace(material);
     }
+
+    fn transformation(&self) -> Matrix<f64> {
+        self.transformation.borrow().deref().clone()
+    }
+
+    fn change_transformation(&self, transformation: Matrix<f64>) {
+        self.transformation.replace(transformation);
+    }
+
 }
 
 #[cfg(test)]
@@ -224,8 +232,8 @@ mod tests {
     #[test]
     fn intersect_a_scaled_sphere_with_a_ray() {
         let ray = Ray::new(Point::new(0.0, 0.0, -5.0), Vector::new(0.0, 0.0, 1.0));
-        let mut sphere = Sphere::new(Point::new(0.0, 0.0, 0.0), 1.0);
-        sphere.set_transformation(scaling(2.0, 2.0, 2.0));
+        let sphere = Sphere::new(Point::new(0.0, 0.0, 0.0), 1.0);
+        sphere.change_transformation(scaling(2.0, 2.0, 2.0));
 
         let xs = sphere.intersect(&ray);
         assert_eq!(xs.len(), 2);
@@ -236,8 +244,8 @@ mod tests {
     #[test]
     fn intersect_a_translated_sphere_with_a_ray() {
         let ray = Ray::new(Point::new(0.0, 0.0, -5.0), Vector::new(0.0, 0.0, 1.0));
-        let mut sphere = Sphere::new(Point::new(0.0, 0.0, 0.0), 1.0);
-        sphere.set_transformation(translation(5.0, 0.0, 0.0));
+        let sphere = Sphere::new(Point::new(0.0, 0.0, 0.0), 1.0);
+        sphere.change_transformation(translation(5.0, 0.0, 0.0));
 
         let xs = sphere.intersect(&ray);
         assert_eq!(xs.len(), 0);
@@ -245,8 +253,8 @@ mod tests {
 
     #[test]
     fn computing_the_normal_on_a_translated_sphere() {
-        let mut s = Sphere::new_unit();
-        s.set_transformation(translation(0.0, 1.0, 0.0));
+        let s = Sphere::new_unit();
+        s.change_transformation(translation(0.0, 1.0, 0.0));
         let pt = Point::new(0.0, 1.0 + std::f64::consts::FRAC_1_SQRT_2, -std::f64::consts::FRAC_1_SQRT_2);
         let expected = Vector::new(0.0, std::f64::consts::FRAC_1_SQRT_2, -std::f64::consts::FRAC_1_SQRT_2);
         let actual = s.normal_at(pt);
@@ -257,8 +265,8 @@ mod tests {
 
     #[test]
     fn computing_the_normal_on_a_transformed_sphere() {
-        let mut s = Sphere::new_unit();
-        s.set_transformation(scaling(1.0, 0.5, 1.0) * rotation_z(std::f64::consts::PI / 5.0));
+        let s = Sphere::new_unit();
+        s.change_transformation(scaling(1.0, 0.5, 1.0) * rotation_z(std::f64::consts::PI / 5.0));
         let pt = Point::new(0.0, 0.5 * 2.0_f64.sqrt(), -0.5 * 2.0_f64.sqrt());
         let expected = Vector::new(0.0, 0.9701425, -0.2425356);
         let actual = s.normal_at(pt);

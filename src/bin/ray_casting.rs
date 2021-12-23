@@ -78,8 +78,8 @@ fn determine_color(ray: &Rc<Ray>, light: &PointLight, hit: &Intersection) -> Col
 }
 
 fn create_sphere() -> Sphere {
-    let mut sphere = Sphere::new_unit();
-    sphere.set_transformation(scaling(1.0, 1.5, 1.0) * translation(0.0, 0.0, 5.0));
+    let sphere = Sphere::new_unit();
+    sphere.change_transformation(scaling(1.0, 1.5, 1.0) * translation(0.0, 0.0, 5.0));
     let material = MaterialBuilder::new()
         .color(Color::new(1.0, 0.2, 1.0))
         .build();

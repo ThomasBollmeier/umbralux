@@ -44,9 +44,9 @@ fn main() -> Result<()> {
 
 fn create_floor() -> Rc<dyn Object3D> {
 
-    let mut floor = Sphere::new_unit();
+    let floor = Sphere::new_unit();
 
-    floor.set_transformation(scaling(10.0, 0.01, 10.0));
+    floor.change_transformation(scaling(10.0, 0.01, 10.0));
 
     let mat = MaterialBuilder::new()
         .color(Color::new(1.0, 0.9, 0.9))
@@ -58,9 +58,9 @@ fn create_floor() -> Rc<dyn Object3D> {
 }
 
 fn create_left_wall(floor: &Rc<dyn Object3D>) -> Rc<dyn Object3D> {
-    let mut left_wall = Sphere::new_unit();
+    let left_wall = Sphere::new_unit();
 
-    left_wall.set_transformation(
+    left_wall.change_transformation(
         translation(0.0, 0.0, 5.0) * rotation_y(-1.0 * FRAC_PI_4) *
             rotation_x(FRAC_PI_2) * scaling(10.0, 0.01, 10.0));
     left_wall.change_material(floor.material());
@@ -69,9 +69,9 @@ fn create_left_wall(floor: &Rc<dyn Object3D>) -> Rc<dyn Object3D> {
 }
 
 fn create_right_wall(floor: &Rc<dyn Object3D>) -> Rc<dyn Object3D> {
-    let mut right_wall = Sphere::new_unit();
+    let right_wall = Sphere::new_unit();
 
-    right_wall.set_transformation(
+    right_wall.change_transformation(
         translation(0.0, 0.0, 5.0) * rotation_y(FRAC_PI_4) *
             rotation_x(FRAC_PI_2) * scaling(10.0, 0.01, 10.0));
     right_wall.change_material(floor.material());
@@ -80,9 +80,9 @@ fn create_right_wall(floor: &Rc<dyn Object3D>) -> Rc<dyn Object3D> {
 }
 
 fn create_middle_sphere() -> Rc<dyn Object3D> {
-    let mut middle = Sphere::new_unit();
+    let middle = Sphere::new_unit();
 
-    middle.set_transformation(translation(-0.5, 1.0, 0.5));
+    middle.change_transformation(translation(-0.5, 1.0, 0.5));
 
     let mat = MaterialBuilder::new()
         .color(Color::new(0.1, 1.0, 0.5))
@@ -95,9 +95,9 @@ fn create_middle_sphere() -> Rc<dyn Object3D> {
 }
 
 fn create_smaller_sphere() -> Rc<dyn Object3D> {
-    let mut sphere = Sphere::new_unit();
+    let sphere = Sphere::new_unit();
 
-    sphere.set_transformation(translation(1.5, 0.5, -0.5) *
+    sphere.change_transformation(translation(1.5, 0.5, -0.5) *
         scaling(0.5, 0.5, 0.5));
 
     let mat = MaterialBuilder::new()
@@ -111,9 +111,9 @@ fn create_smaller_sphere() -> Rc<dyn Object3D> {
 }
 
 fn create_smallest_sphere() -> Rc<dyn Object3D> {
-    let mut sphere = Sphere::new_unit();
+    let sphere = Sphere::new_unit();
 
-    sphere.set_transformation(translation(-1.5, 0.33, -0.75) *
+    sphere.change_transformation(translation(-1.5, 0.33, -0.75) *
         scaling(0.33, 0.33, 0.33));
 
     let mat = MaterialBuilder::new()

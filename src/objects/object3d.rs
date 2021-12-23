@@ -2,6 +2,7 @@ use std::any::Any;
 use std::rc::Rc;
 use crate::core::{Point, Vector};
 use crate::features::material::Material;
+use crate::matrix::Matrix;
 use crate::objects::ray::Ray;
 
 pub trait Object3D {
@@ -10,6 +11,8 @@ pub trait Object3D {
     fn normal_at(&self, pt: Point) -> Vector;
     fn material(&self) -> Material;
     fn change_material(&self, material: Material);
+    fn transformation(&self) -> Matrix<f64>;
+    fn change_transformation(&self, transformation: Matrix<f64>);
 }
 
 pub fn find_intersections(ray: &Rc<Ray>, partner: &Rc<dyn Object3D>) -> Vec<Intersection> {
@@ -117,4 +120,55 @@ pub struct ComputationResult {
     pub eye_dir: Vector,
     pub normal: Vector,
     pub inside: bool,
+}
+
+#[cfg(test)]
+mod tests {
+    use std::rc::Rc;
+    use crate::features::material::MaterialBuilder;
+    use crate::matrix::Matrix;
+    use crate::objects::object3d::Object3D;
+    use crate::objects::sphere::Sphere;
+    use crate::testutil::assert_matrix_float_eq;
+    use crate::transform::translation;
+
+    #[test]
+    fn has_default_transformation() {
+        let shape = create_test_shape();
+
+        assert_matrix_float_eq(&shape.transformation(), &Matrix::<f64>::identity(4));
+    }
+
+    #[test]
+    fn assigning_a_transformation() {
+        let shape = create_test_shape();
+        let transform = translation(2.0, 3.0, 4.0);
+        shape.change_transformation(transform.clone());
+
+        assert_matrix_float_eq(&shape.transformation(), &transform);
+    }
+
+    #[test]
+    fn has_default_material() {
+        let shape = create_test_shape();
+        let default_mat = MaterialBuilder::new().build();
+
+        assert_eq!(default_mat, shape.material());
+    }
+
+    #[test]
+    fn assigning_a_material() {
+        let shape = create_test_shape();
+        let mat = MaterialBuilder::new()
+            .ambient(1.23)
+            .build();
+        shape.change_material(mat);
+
+        assert_eq!(mat, shape.material());
+    }
+
+    fn create_test_shape() -> Rc<dyn Object3D> {
+        Rc::new(Sphere::new_unit())
+    }
+
 }
