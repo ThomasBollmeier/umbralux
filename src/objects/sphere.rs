@@ -6,7 +6,6 @@ use crate::features::material::{Material, MaterialBuilder};
 use crate::matrix::Matrix;
 use crate::objects::ray::Ray;
 use crate::objects::object3d::Object3D;
-use crate::transform::transform;
 
 #[derive(PartialEq, Debug)]
 pub struct Sphere {
@@ -38,12 +37,11 @@ impl Object3D for Sphere {
         self
     }
 
-    fn intersect(&self, ray: &Ray) -> Vec<f64> {
+    fn local_intersect(&self, local_ray: &Ray) -> Vec<f64> {
         let mut ret = Vec::new();
 
-        let transformed_ray = ray.transform(&self.transformation().invert().unwrap());
-        let a = transformed_ray.origin();
-        let b = transformed_ray.direction();
+        let a = local_ray.origin();
+        let b = local_ray.direction();
         let c = self.origin;
         let d = a - c;
 
@@ -60,14 +58,8 @@ impl Object3D for Sphere {
         ret
     }
 
-    fn normal_at(&self, pt: Point) -> Vector {
-        let t_inv = self.transformation().invert().unwrap();
-        let pt_trans = transform(pt,&t_inv).unwrap();
-        let normal_trans = pt_trans - self.origin;
-        let t = t_inv.transpose();
-        let normal = transform(normal_trans, &t).unwrap();
-
-        normal.normalize()
+    fn local_normal_at(&self, local_point: Point) -> Vector {
+        local_point - self.origin
     }
 
     fn material(&self) -> Material {

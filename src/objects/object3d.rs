@@ -4,14 +4,37 @@ use crate::core::{Point, Vector};
 use crate::features::material::Material;
 use crate::matrix::Matrix;
 use crate::objects::ray::Ray;
+use crate::transform::transform;
 
 pub trait Object3D {
+
     fn as_any(&self) -> &dyn Any;
-    fn intersect(&self, ray: &Ray) -> Vec<f64>;
-    fn normal_at(&self, pt: Point) -> Vector;
+
+    fn intersect(&self, ray: &Ray) -> Vec<f64> {
+        let local_ray = ray.transform(&self.transformation().invert().unwrap());
+        self.local_intersect(&local_ray)
+    }
+
+    fn local_intersect(&self, local_ray: &Ray) -> Vec<f64>;
+
+    fn normal_at(&self, pt: Point) -> Vector {
+        let t_inv = self.transformation().invert().unwrap();
+        let local_point = transform(pt,&t_inv).unwrap();
+        let local_normal = self.local_normal_at(local_point);
+        let t = t_inv.transpose();
+        let normal = transform(local_normal, &t).unwrap();
+
+        normal.normalize()
+    }
+
+    fn local_normal_at(&self, local_point: Point) -> Vector;
+
     fn material(&self) -> Material;
+
     fn change_material(&self, material: Material);
+
     fn transformation(&self) -> Matrix<f64>;
+
     fn change_transformation(&self, transformation: Matrix<f64>);
 }
 
@@ -124,13 +147,15 @@ pub struct ComputationResult {
 
 #[cfg(test)]
 mod tests {
+    use std::f64::consts::{FRAC_1_SQRT_2, PI, SQRT_2};
     use std::rc::Rc;
+    use crate::core::{Point, Vector};
     use crate::features::material::MaterialBuilder;
     use crate::matrix::Matrix;
     use crate::objects::object3d::Object3D;
     use crate::objects::sphere::Sphere;
-    use crate::testutil::assert_matrix_float_eq;
-    use crate::transform::translation;
+    use crate::testutil::{assert_matrix_float_eq, assert_vector_eq};
+    use crate::transform::{rotation_z, scaling, translation};
 
     #[test]
     fn has_default_transformation() {
@@ -166,6 +191,30 @@ mod tests {
 
         assert_eq!(mat, shape.material());
     }
+
+    #[test]
+    fn computing_normal_on_a_translated_shape() {
+        let shape = create_test_shape();
+        shape.change_transformation(translation(0.0, 1.0, 0.0));
+        let expected = Vector::new(0.0, FRAC_1_SQRT_2, -FRAC_1_SQRT_2);
+        let pt = Point::new(0.0, 1.0 + FRAC_1_SQRT_2, -FRAC_1_SQRT_2);
+        let actual = shape.normal_at(pt);
+
+        assert_vector_eq(expected, actual);
+    }
+
+    #[test]
+    fn computing_normal_on_a_transformed_shape() {
+        let shape = create_test_shape();
+        let t = scaling(1.0, 0.5, 1.0) * rotation_z(PI / 5.0);
+        shape.change_transformation(t);
+        let expected = Vector::new(0.0, 0.97014, -0.24254);
+        let pt = Point::new(0.0, SQRT_2 / 2.0, -SQRT_2 / 2.0);
+        let actual = shape.normal_at(pt);
+
+        assert_vector_eq(expected, actual);
+    }
+
 
     fn create_test_shape() -> Rc<dyn Object3D> {
         Rc::new(Sphere::new_unit())
