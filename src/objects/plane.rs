@@ -1,18 +1,26 @@
 use std::any::Any;
+use std::cell::RefCell;
+use std::ops::Deref;
 use crate::core::{Point, Vector};
-use crate::features::material::Material;
+use crate::features::material::{Material, MaterialBuilder};
 use crate::matrix::Matrix;
 use crate::objects::object3d::Object3D;
 use crate::objects::ray::Ray;
 
 pub struct Plane {
-
+    transformation: RefCell<Matrix<f64>>,
+    material: RefCell<Material>,
 }
 
 impl Plane {
 
-    fn new() -> Plane {
-        Plane{}
+    pub fn new() -> Plane {
+        let transformation = Matrix::identity(4);
+        let material = MaterialBuilder::new().build();
+        Plane {
+            transformation: RefCell::new(transformation),
+            material: RefCell::new(material),
+        }
     }
 
 }
@@ -31,24 +39,24 @@ impl Object3D for Plane {
         vec![-1.0 * local_ray.origin().y() / dir_y]
     }
 
-    fn local_normal_at(&self, local_point: Point) -> Vector {
+    fn local_normal_at(&self, _local_point: Point) -> Vector {
         Vector::new(0.0, 1.0, 0.0)
     }
 
     fn material(&self) -> Material {
-        todo!()
+        self.material.borrow().deref().clone()
     }
 
     fn change_material(&self, material: Material) {
-        todo!()
+        self.material.replace(material);
     }
 
     fn transformation(&self) -> Matrix<f64> {
-        Matrix::identity(4)
+        self.transformation.borrow().deref().clone()
     }
 
     fn change_transformation(&self, transformation: Matrix<f64>) {
-        todo!()
+        self.transformation.replace(transformation);
     }
 }
 
