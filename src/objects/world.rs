@@ -273,7 +273,7 @@ pub(crate) mod tests {
             .specular(0.0)
             .shininess(0.0)
             .build();
-        inner_obj.change_material(inner_mat);
+        inner_obj.change_material(inner_mat.clone());
 
         let ray = Rc::new(Ray::new(
             Point::new(0.0, 0.0, 0.75),

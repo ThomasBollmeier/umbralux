@@ -1,6 +1,12 @@
+use std::fmt::Debug;
 use num_traits::ToPrimitive;
 use crate::core::{Color, Point};
 
+pub trait Pattern: Debug {
+    fn color_at(&self, pt: &Point) -> Color;
+}
+
+#[derive(Copy, Clone, Debug)]
 pub struct StripePattern {
     color_a: Color,
     color_b: Color,
@@ -29,6 +35,12 @@ impl StripePattern {
         self.color_b
     }
 
+}
+
+impl Pattern for StripePattern {
+    fn color_at(&self, pt: &Point) -> Color {
+        self.stripe_at(*pt)
+    }
 }
 
 

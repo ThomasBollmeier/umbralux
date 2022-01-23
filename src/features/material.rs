@@ -1,7 +1,10 @@
+use std::rc::Rc;
 use crate::core::Color;
+use crate::features::pattern::Pattern;
 
 pub struct MaterialBuilder {
     color: Color,
+    pattern: Option<Rc<dyn Pattern>>,
     ambient: f64,
     diffuse: f64,
     specular: f64,
@@ -12,6 +15,7 @@ impl MaterialBuilder {
     pub fn new() -> MaterialBuilder {
         MaterialBuilder {
             color: Color::new(1.0, 1.0, 1.0),
+            pattern: None,
             ambient: 0.1,
             diffuse: 0.9,
             specular: 0.9,
@@ -21,6 +25,11 @@ impl MaterialBuilder {
 
     pub fn color(&mut self, color: Color) -> &mut Self {
         self.color = color;
+        self
+    }
+
+    pub fn pattern(&mut self, pattern: &Rc<dyn Pattern>) -> &mut Self {
+        self.pattern = Some(pattern.clone());
         self
     }
 
@@ -47,6 +56,10 @@ impl MaterialBuilder {
     pub fn build(&self) -> Material {
         Material {
             color: self.color,
+            pattern: match &self.pattern {
+                Some(pattern) => Some(pattern.clone()),
+                None => None
+            },
             ambient: self.ambient,
             diffuse: self.diffuse,
             specular: self.specular,
@@ -56,13 +69,61 @@ impl MaterialBuilder {
 
 }
 
-#[derive(Copy, Clone, PartialEq, Debug)]
+#[derive(Clone, Debug)]
 pub struct Material {
     pub color: Color,
+    pub pattern: Option<Rc<dyn Pattern>>,
     pub ambient: f64,
     pub diffuse: f64,
     pub specular: f64,
     pub shininess: f64,
+}
+
+impl PartialEq for Material {
+
+    fn eq(&self, other: &Self) -> bool {
+        if self.color != other.color {
+            return false;
+        }
+
+        match &self.pattern {
+            Some(pattern) => match &other.pattern {
+                Some(other_pattern) => {
+                    if Rc::ptr_eq(pattern, other_pattern) {
+                        return false;
+                    }
+                }
+                None => {
+                    return false;
+                }
+            }
+            None => if let Some(_) = &other.pattern {
+                return false;
+            }
+        }
+
+        if self.ambient != other.ambient {
+            return false;
+        }
+
+        if self.diffuse != other.diffuse {
+            return false;
+        }
+
+        if self.specular != other.specular {
+            return false;
+        }
+
+        if self.shininess != other.shininess {
+            return false;
+        }
+
+        true
+    }
+
+    fn ne(&self, other: &Self) -> bool {
+        !self.eq(other)
+    }
 }
 
 #[cfg(test)]
@@ -103,7 +164,5 @@ mod tests {
         assert_float_absolute_eq!(material.shininess, 400.0);
 
     }
-
-
 
 }

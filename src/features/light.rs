@@ -19,8 +19,15 @@ pub fn lighting(
     let normal = surface.normalize();
     let black = Color::new(0.0, 0.0, 0.0);
 
+    // Determine color to work with:
+    let color = if let Some(pattern) = &material.pattern {
+        pattern.color_at(position)
+    } else {
+        material.color
+    };
+
     // Combine the surface color with the light's color:
-    let effective_color = material.color * light.intensity;
+    let effective_color = color * light.intensity;
 
     // find direction to light source:
     let light_v = (light.position - *position).normalize();
@@ -57,9 +64,11 @@ pub fn lighting(
 
 #[cfg(test)]
 mod tests {
+    use std::rc::Rc;
     use crate::core::{Color, Point, Vector};
     use crate::features::light::{lighting, PointLight};
     use crate::features::material::{Material, MaterialBuilder};
+    use crate::features::pattern::{Pattern, StripePattern};
     use crate::testutil::assert_color_eq;
 
     fn init() -> (Material, Point) {
@@ -161,4 +170,38 @@ mod tests {
 
         assert_color_eq(expected, actual);
     }
+
+    #[test]
+    fn lighting_with_a_pattern_applied() {
+        let pattern: Rc<dyn Pattern> = Rc::new(StripePattern::new(
+            Color::new(1.0, 1.0, 1.0),
+            Color::new(0.0, 0.0, 0.0)
+        ));
+        let material = MaterialBuilder::new()
+            .pattern(&pattern)
+            .ambient(1.0)
+            .diffuse(0.0)
+            .specular(0.0)
+            .build();
+
+        let eyev = Vector::new(0.0, 0.0, -1.0);
+        let normalv = Vector::new(0.0, 0.0, -1.0);
+        let light = PointLight {
+            position: Point::new(0.0, 0.0, -10.0),
+            intensity: Color::new(1.0, 1.0, 1.0),
+        };
+        let pt1 = Point::new(0.9, 0.0, 0.0);
+        let pt2 = Point::new(1.1, 0.0, 0.0);
+        let expected1 = Color::new(1.0, 1.0, 1.0);
+        let expected2 = Color::new(0.0, 0.0, 0.0);
+
+        assert_color_eq(expected1,
+                        lighting(&material, &light, &pt1,
+                                 &eyev, &normalv, false));
+        assert_color_eq(expected2,
+                        lighting(&material, &light, &pt2,
+                                 &eyev, &normalv, false));
+
+    }
+
 }

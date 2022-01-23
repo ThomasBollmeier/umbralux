@@ -187,7 +187,7 @@ mod tests {
         let mat = MaterialBuilder::new()
             .ambient(1.23)
             .build();
-        shape.change_material(mat);
+        shape.change_material(mat.clone());
 
         assert_eq!(mat, shape.material());
     }
