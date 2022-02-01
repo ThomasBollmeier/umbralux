@@ -21,7 +21,7 @@ pub fn lighting(
 
     // Determine color to work with:
     let color = if let Some(pattern) = &material.pattern {
-        pattern.color_at(position)
+        pattern.color_at(*position)
     } else {
         material.color
     };
