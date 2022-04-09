@@ -70,6 +70,7 @@ fn determine_color(ray: &Rc<Ray>, light: &PointLight, hit: &Intersection) -> Col
 
     lighting(
         &partner.material(),
+        &partner,
         &light,
         &pos,
         &eye,

@@ -64,6 +64,7 @@ impl World {
         let is_shadowed = self.is_shadowed(comp_res.over_point);
         lighting(
             &comp_res.object.material(),
+            &comp_res.object,
             &self.light.as_ref().unwrap(),
             &comp_res.over_point,
             &comp_res.eye_dir,

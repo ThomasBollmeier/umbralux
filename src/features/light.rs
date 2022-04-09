@@ -1,5 +1,7 @@
+use std::rc::Rc;
 use crate::core::{Color, Point, Vector};
 use crate::features::material::Material;
+use crate::objects::object3d::Object3D;
 
 #[derive(PartialEq)]
 pub struct PointLight {
@@ -9,6 +11,7 @@ pub struct PointLight {
 
 pub fn lighting(
     material: &Material,
+    object: &Rc<dyn Object3D>,
     light: &PointLight,
     position: &Point,
     camera: &Vector,
@@ -21,7 +24,7 @@ pub fn lighting(
 
     // Determine color to work with:
     let color = if let Some(pattern) = &material.pattern {
-        pattern.color_at(*position)
+        pattern.color_at_object(object, *position)
     } else {
         material.color
     };
@@ -69,17 +72,20 @@ mod tests {
     use crate::features::light::{lighting, PointLight};
     use crate::features::material::{Material, MaterialBuilder};
     use crate::features::pattern::{Pattern, StripePattern};
+    use crate::objects::object3d::Object3D;
+    use crate::objects::sphere::Sphere;
     use crate::testutil::assert_color_eq;
 
-    fn init() -> (Material, Point) {
+    fn init() -> (Material, Rc<dyn Object3D>, Point) {
         let material = MaterialBuilder::new().build();
+        let object: Rc<dyn Object3D> = Rc::new(Sphere::new_unit());
         let position = Point::new(0.0, 0.0, 0.0);
-        (material, position)
+        (material, object, position)
     }
 
     #[test]
     fn lighting_with_camera_between_light_and_surface() {
-        let (material, position) = init();
+        let (material, object, position) = init();
         let camera = Vector::new(0.0, 0.0, -1.0);
         let surface = Vector::new(0.0, 0.0, -1.0);
         let light = PointLight{
@@ -87,14 +93,14 @@ mod tests {
             intensity: Color::new(1.0, 1.0, 1.0),
         };
         let expected = Color::new(1.9, 1.9, 1.9);
-        let actual = lighting(&material, &light, &position, &camera, &surface, false);
+        let actual = lighting(&material, &object, &light, &position, &camera, &surface, false);
 
         assert_color_eq(expected, actual);
     }
 
     #[test]
     fn lighting_with_camera_between_light_and_surface_offset() {
-        let (material, position) = init();
+        let (material, object, position) = init();
         let camera = Vector::new(0.0, 0.5 * 2.0_f64.sqrt(), -0.5 * 2.0_f64.sqrt());
         let surface = Vector::new(0.0, 0.0, -1.0);
         let light = PointLight{
@@ -102,14 +108,14 @@ mod tests {
             intensity: Color::new(1.0, 1.0, 1.0),
         };
         let expected = Color::new(1.0, 1.0, 1.0);
-        let actual = lighting(&material, &light, &position, &camera, &surface, false);
+        let actual = lighting(&material, &object, &light, &position, &camera, &surface, false);
 
         assert_color_eq(expected, actual);
     }
 
     #[test]
     fn lighting_with_camera_opposite_surface_light_offset_45() {
-        let (material, position) = init();
+        let (material, object, position) = init();
         let camera = Vector::new(0.0, 0.0, -1.0);
         let surface = Vector::new(0.0, 0.0, -1.0);
         let light = PointLight{
@@ -118,14 +124,14 @@ mod tests {
         };
         let intensity = 0.1 + 0.9 * 0.5 * 2.0_f64.sqrt();
         let expected = Color::new(intensity, intensity, intensity);
-        let actual = lighting(&material, &light, &position, &camera, &surface, false);
+        let actual = lighting(&material, &object, &light, &position, &camera, &surface, false);
 
         assert_color_eq(expected, actual);
     }
 
     #[test]
     fn lighting_with_camera_in_path_of_reflection() {
-        let (material, position) = init();
+        let (material, object, position) = init();
         let camera = Vector::new(0.0, -0.5*2.0_f64.sqrt(), -0.5*2.0_f64.sqrt());
         let surface = Vector::new(0.0, 0.0, -1.0);
         let light = PointLight{
@@ -134,14 +140,14 @@ mod tests {
         };
         let intensity = 0.1 + 0.9 * 0.5 * 2.0_f64.sqrt() + 0.9;
         let expected = Color::new(intensity, intensity, intensity);
-        let actual = lighting(&material, &light, &position, &camera, &surface, false);
+        let actual = lighting(&material, &object, &light, &position, &camera, &surface, false);
 
         assert_color_eq(expected, actual);
     }
 
     #[test]
     fn lighting_with_light_behind_surface() {
-        let (material, position) = init();
+        let (material, object, position) = init();
         let camera = Vector::new(0.0, 0.0, -1.0);
         let surface = Vector::new(0.0, 0.0, -1.0);
         let light = PointLight{
@@ -150,14 +156,14 @@ mod tests {
         };
         let intensity = 0.1;
         let expected = Color::new(intensity, intensity, intensity);
-        let actual = lighting(&material, &light, &position, &camera, &surface, false);
+        let actual = lighting(&material, &object, &light, &position, &camera, &surface, false);
 
         assert_color_eq(expected, actual);
     }
 
     #[test]
     fn lighting_with_the_surface_in_shadow() {
-        let (material, position) = init();
+        let (material, object, position) = init();
         let camera = Vector::new(0.0, 0.0, -1.0);
         let surface = Vector::new(0.0, 0.0, -1.0);
         let light = PointLight{
@@ -166,7 +172,7 @@ mod tests {
         };
         let intensity = 0.1;
         let expected = Color::new(intensity, intensity, intensity);
-        let actual = lighting(&material, &light, &position, &camera, &surface, true);
+        let actual = lighting(&material, &object, &light, &position, &camera, &surface, true);
 
         assert_color_eq(expected, actual);
     }
@@ -183,6 +189,7 @@ mod tests {
             .diffuse(0.0)
             .specular(0.0)
             .build();
+        let object: Rc<dyn Object3D> = Rc::new(Sphere::new_unit());
 
         let eyev = Vector::new(0.0, 0.0, -1.0);
         let normalv = Vector::new(0.0, 0.0, -1.0);
@@ -196,10 +203,10 @@ mod tests {
         let expected2 = Color::new(0.0, 0.0, 0.0);
 
         assert_color_eq(expected1,
-                        lighting(&material, &light, &pt1,
+                        lighting(&material, &object, &light, &pt1,
                                  &eyev, &normalv, false));
         assert_color_eq(expected2,
-                        lighting(&material, &light, &pt2,
+                        lighting(&material, &object, &light, &pt2,
                                  &eyev, &normalv, false));
 
     }
