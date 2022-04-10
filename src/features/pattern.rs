@@ -75,16 +75,92 @@ impl Pattern for StripePattern {
     }
 }
 
+#[derive(Clone, Debug)]
+pub struct GradientPattern {
+    color_a: Color,
+    color_b: Color,
+    transformation: RefCell<Matrix<f64>>,
+}
+
+impl GradientPattern {
+
+    pub fn new(color_a: Color, color_b: Color) -> GradientPattern {
+        GradientPattern {
+            color_a,
+            color_b,
+            transformation: RefCell::new(Matrix::identity(4))
+        }
+    }
+
+    pub fn color_a(&self) -> Color {
+        self.color_a
+    }
+
+    pub fn color_b(&self) -> Color {
+        self.color_b
+    }
+
+}
+
+impl Pattern for GradientPattern {
+
+    fn color_at(&self, pt: Point) -> Color {
+
+        let gradient = self.color_b() - self.color_a();
+        let fraction = pt.x() - pt.x().floor();
+
+        self.color_a() + gradient * fraction
+    }
+
+    fn transformation(&self) -> Matrix<f64> {
+        self.transformation.borrow().deref().clone()
+    }
+
+    fn change_transformation(&self, transformation: Matrix<f64>) {
+        self.transformation.replace(transformation);
+    }
+}
 
 #[cfg(test)]
 mod tests {
+    use std::cell::RefCell;
+    use std::ops::Deref;
     use std::rc::Rc;
     use crate::core::{Color, Point};
-    use crate::features::pattern::{Pattern, StripePattern};
+    use crate::features::pattern::{GradientPattern, Pattern, StripePattern};
+    use crate::matrix::Matrix;
     use crate::objects::object3d::Object3D;
     use crate::objects::sphere::Sphere;
-    use crate::testutil::assert_color_eq;
+    use crate::testutil::{assert_color_eq, assert_matrix_float_eq};
     use crate::transform::{scaling, translation};
+
+    #[derive(Clone, Debug)]
+    pub struct TestPattern {
+        transformation: RefCell<Matrix<f64>>,
+    }
+
+    impl TestPattern {
+        fn new() -> TestPattern {
+            TestPattern {
+                transformation: RefCell::new(Matrix::<f64>::identity(4))
+            }
+        }
+    }
+
+    impl Pattern for TestPattern {
+
+        fn color_at(&self, pt: Point) -> Color {
+            Color::new(pt.x(), pt.y(), pt.z())
+        }
+
+        fn transformation(&self) -> Matrix<f64> {
+            self.transformation.borrow().deref().clone()
+        }
+
+        fn change_transformation(&self, transformation: Matrix<f64>) {
+            self.transformation.replace(transformation);
+        }
+    }
 
     #[test]
     fn creating_a_stripe_pattern() {
@@ -165,6 +241,78 @@ mod tests {
         let pt = Point::new(2.5, 0., 0.);
         let actual_color = pattern.color_at_object(&object, pt);
         assert_color_eq(actual_color, white);
+    }
+
+    #[test]
+    fn assigning_a_transformation() {
+        let pattern = TestPattern::new();
+        let expected = translation(1., 2., 3.);
+        pattern.change_transformation(expected.clone());
+
+        let actual = pattern.transformation();
+        assert_matrix_float_eq(&actual, &expected);
+    }
+
+    #[test]
+    fn a_pattern_with_an_object_transformation() {
+        let pattern = TestPattern::new();
+        let object: Rc<dyn Object3D> = Rc::new(Sphere::new_unit());
+        object.change_transformation(scaling(2., 2., 2.));
+        let expected = Color::new(1., 1.5, 2.);
+        let actual = pattern.color_at_object(&object, Point::new(2., 3., 4.));
+
+        assert_color_eq(actual, expected);
+    }
+
+    #[test]
+    fn a_pattern_with_an_pattern_transformation() {
+        let pattern = TestPattern::new();
+        let object: Rc<dyn Object3D> = Rc::new(Sphere::new_unit());
+        pattern.change_transformation(scaling(2., 2., 2.));
+        let expected = Color::new(1., 1.5, 2.);
+        let actual = pattern.color_at_object(&object, Point::new(2., 3., 4.));
+
+        assert_color_eq(actual, expected);
+    }
+
+    #[test]
+    fn a_pattern_with_both_transformations() {
+        let pattern = TestPattern::new();
+        pattern.change_transformation(translation(0.5, 1., 1.5));
+        let object: Rc<dyn Object3D> = Rc::new(Sphere::new_unit());
+        object.change_transformation(scaling(2., 2., 2.));
+        let expected = Color::new(0.75, 0.5, 0.25);
+        let actual = pattern.color_at_object(&object, Point::new(2.5, 3., 3.5));
+
+        assert_color_eq(actual, expected);
+    }
+
+    #[test]
+    fn gradient_linearly_interpolates() {
+        let black = Color::new(0., 0., 0.);
+        let white = Color::new(1., 1., 1.);
+        let pattern = GradientPattern::new(white, black);
+
+        assert_color_eq(
+            pattern.color_at(Point::new(0., 0., 0.)),
+            white
+        );
+
+        assert_color_eq(
+            pattern.color_at(Point::new(0.25, 0., 0.)),
+            Color::new(0.75, 0.75, 0.75)
+        );
+
+        assert_color_eq(
+            pattern.color_at(Point::new(0.5, 0., 0.)),
+            Color::new(0.5, 0.5, 0.5)
+        );
+
+        assert_color_eq(
+            pattern.color_at(Point::new(0.75, 0., 0.)),
+            Color::new(0.25, 0.25, 0.25)
+        );
+
     }
 
     fn initialize() -> (Color, Color, StripePattern) {
