@@ -71,7 +71,7 @@ mod tests {
     use crate::core::{Color, Point, Vector};
     use crate::features::light::{lighting, PointLight};
     use crate::features::material::{Material, MaterialBuilder};
-    use crate::features::pattern::{Pattern, StripePattern};
+    use crate::features::pattern::{Pattern, TwoColorPattern};
     use crate::objects::object3d::Object3D;
     use crate::objects::sphere::Sphere;
     use crate::testutil::assert_color_eq;
@@ -179,7 +179,7 @@ mod tests {
 
     #[test]
     fn lighting_with_a_pattern_applied() {
-        let pattern: Rc<dyn Pattern> = Rc::new(StripePattern::new(
+        let pattern: Rc<dyn Pattern> = Rc::new(TwoColorPattern::new_stripes(
             Color::new(1.0, 1.0, 1.0),
             Color::new(0.0, 0.0, 0.0)
         ));
