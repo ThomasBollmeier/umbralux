@@ -30,6 +30,7 @@ enum PatternKind {
     Stripes,
     Gradient,
     Ring,
+    Checkers3D,
 }
 
 #[derive(Clone, Debug)]
@@ -52,6 +53,10 @@ impl TwoColorPattern {
 
     pub fn new_ring(color_a: Color, color_b: Color) -> TwoColorPattern {
         Self::new(PatternKind::Ring, color_a, color_b)
+    }
+
+    pub fn new_checkers3d(color_a: Color, color_b: Color) -> TwoColorPattern {
+        Self::new(PatternKind::Checkers3D, color_a, color_b)
     }
 
     fn new(kind: PatternKind, color_a: Color, color_b: Color) -> TwoColorPattern {
@@ -92,6 +97,17 @@ impl TwoColorPattern {
         }
     }
 
+    fn checkers3d_color_at(&self, pt: Point) -> Color {
+        let value = pt.x().floor() + pt.y().floor() + pt.z().floor();
+        let value = value as i64;
+
+        if value % 2 == 0 {
+            self.color_a
+        } else {
+            self.color_b
+        }
+    }
+
 }
 
 impl Pattern for TwoColorPattern {
@@ -101,6 +117,7 @@ impl Pattern for TwoColorPattern {
             PatternKind::Stripes => self.stripes_color_at(pt),
             PatternKind::Gradient => self.gradient_color_at(pt),
             PatternKind::Ring => self.ring_color_at(pt),
+            PatternKind::Checkers3D => self.checkers3d_color_at(pt),
         }
     }
 
@@ -327,6 +344,73 @@ mod tests {
 
 
     }
+
+    #[test]
+    fn checkers_should_repeat_in_x() {
+        let black = Color::new(0., 0., 0.);
+        let white = Color::new(1., 1., 1.);
+        let pattern = TwoColorPattern::new_checkers3d(white, black);
+
+        assert_color_eq(
+            pattern.color_at(Point::new(0., 0., 0.)),
+            white
+        );
+
+        assert_color_eq(
+            pattern.color_at(Point::new(0.99, 0., 0.)),
+            white
+        );
+
+        assert_color_eq(
+            pattern.color_at(Point::new(1.01, 0., 0.)),
+            black
+        );
+    }
+
+    #[test]
+    fn checkers_should_repeat_in_y() {
+        let black = Color::new(0., 0., 0.);
+        let white = Color::new(1., 1., 1.);
+        let pattern = TwoColorPattern::new_checkers3d(white, black);
+
+        assert_color_eq(
+            pattern.color_at(Point::new(0., 0., 0.)),
+            white
+        );
+
+        assert_color_eq(
+            pattern.color_at(Point::new(0., 0.99, 0.)),
+            white
+        );
+
+        assert_color_eq(
+            pattern.color_at(Point::new(0., 1.01, 0.)),
+            black
+        );
+    }
+
+    #[test]
+    fn checkers_should_repeat_in_z() {
+        let black = Color::new(0., 0., 0.);
+        let white = Color::new(1., 1., 1.);
+        let pattern = TwoColorPattern::new_checkers3d(white, black);
+
+        assert_color_eq(
+            pattern.color_at(Point::new(0., 0., 0.)),
+            white
+        );
+
+        assert_color_eq(
+            pattern.color_at(Point::new(0., 0., 0.99)),
+            white
+        );
+
+        assert_color_eq(
+            pattern.color_at(Point::new(0., 0., 1.01)),
+            black
+        );
+    }
+
 
     fn initialize() -> (Color, Color, TwoColorPattern) {
         let black = Color::new(0.0, 0.0, 0.0);
