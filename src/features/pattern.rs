@@ -130,6 +130,103 @@ impl Pattern for TwoColorPattern {
     }
 }
 
+#[derive(Clone, Debug)]
+pub struct NestedPattern {
+    kind: PatternKind,
+    pattern_a: Rc<dyn Pattern>,
+    pattern_b: Rc<dyn Pattern>,
+    transformation: RefCell<Matrix<f64>>,
+}
+
+impl NestedPattern {
+
+    pub fn new_stripes(pattern_a: Rc<dyn Pattern>, pattern_b: Rc<dyn Pattern>) -> NestedPattern {
+        Self::new(PatternKind::Stripes, pattern_a, pattern_b)
+    }
+
+    pub fn new_gradient(pattern_a: Rc<dyn Pattern>, pattern_b: Rc<dyn Pattern>) -> NestedPattern {
+        Self::new(PatternKind::Gradient, pattern_a, pattern_b)
+    }
+
+    pub fn new_ring(pattern_a: Rc<dyn Pattern>, pattern_b: Rc<dyn Pattern>) -> NestedPattern {
+        Self::new(PatternKind::Ring, pattern_a, pattern_b)
+    }
+
+    pub fn new_checkers3d(pattern_a: Rc<dyn Pattern>, pattern_b: Rc<dyn Pattern>) -> NestedPattern {
+        Self::new(PatternKind::Checkers3D, pattern_a, pattern_b)
+    }
+
+    fn new(kind: PatternKind, pattern_a: Rc<dyn Pattern>, pattern_b: Rc<dyn Pattern>) -> NestedPattern {
+        NestedPattern {
+            kind,
+            pattern_a: pattern_a.clone(),
+            pattern_b: pattern_b.clone(),
+            transformation: RefCell::new(Matrix::identity(4))
+        }
+    }
+
+    fn stripes_color_at(&self, pt: Point) -> Color {
+        let x = pt.x();
+        if x.floor().to_i64().unwrap() % 2 == 0 {
+            self.pattern_a.color_at(pt)
+        } else {
+            self.pattern_b.color_at(pt)
+        }
+    }
+
+    fn gradient_color_at(&self, pt: Point) -> Color {
+
+        let gradient = self.pattern_b.color_at(pt) - self.pattern_a.color_at(pt);
+        let fraction = pt.x() - pt.x().floor();
+
+        self.pattern_a.color_at(pt) + gradient * fraction
+    }
+
+    fn ring_color_at(&self, pt: Point) -> Color {
+
+        let radius = (pt.x().powi(2) + pt.z().powi(2)).sqrt()
+            .floor().to_i64().unwrap();
+
+        if radius % 2 == 0 {
+            self.pattern_a.color_at(pt)
+        } else {
+            self.pattern_b.color_at(pt)
+        }
+    }
+
+    fn checkers3d_color_at(&self, pt: Point) -> Color {
+        let value = pt.x().floor() + pt.y().floor() + pt.z().floor();
+        let value = value as i64;
+
+        if value % 2 == 0 {
+            self.pattern_a.color_at(pt)
+        } else {
+            self.pattern_b.color_at(pt)
+        }
+    }
+
+}
+
+impl Pattern for NestedPattern {
+
+    fn color_at(&self, pt: Point) -> Color {
+        match self.kind {
+            PatternKind::Stripes => self.stripes_color_at(pt),
+            PatternKind::Gradient => self.gradient_color_at(pt),
+            PatternKind::Ring => self.ring_color_at(pt),
+            PatternKind::Checkers3D => self.checkers3d_color_at(pt),
+        }
+    }
+
+    fn transformation(&self) -> Matrix<f64> {
+        self.transformation.borrow().deref().clone()
+    }
+
+    fn change_transformation(&self, transformation: Matrix<f64>) {
+        self.transformation.replace(transformation);
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use std::cell::RefCell;
