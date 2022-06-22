@@ -13,7 +13,7 @@ use umbralux::io::export_as_png;
 use umbralux::objects::object3d::Object3D;
 use umbralux::objects::plane::Plane;
 use umbralux::objects::world::World;
-use umbralux::transform::view_transform;
+use umbralux::transform::{scaling, view_transform};
 
 fn main() -> Result<()> {
 
@@ -65,10 +65,14 @@ fn create_plane() -> Plane {
         Color::new(1., 0., 0.),
         Color::new(1., 1., 1.)
     ));
+    pattern_a.change_transformation(scaling(0.5, 0.5, 0.5));
+
     let pattern_b: Rc<dyn Pattern> = Rc::new(TwoColorPattern::new_stripes(
         Color::new(0., 0., 1.),
         Color::new(0., 1., 0.)
     ));
+    pattern_b.change_transformation(scaling(0.5, 0.5, 0.5));
+
     let pattern: Rc<dyn Pattern> = Rc::new(NestedPattern::new_checkers3d(
         pattern_a,
         pattern_b

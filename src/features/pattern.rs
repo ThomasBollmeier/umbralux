@@ -26,108 +26,27 @@ pub trait Pattern: Debug {
 }
 
 #[derive(Clone, Debug)]
-enum PatternKind {
+pub struct SolidPattern(Color);
+
+impl Pattern for SolidPattern {
+
+    fn color_at(&self, _pt: Point) -> Color {
+        self.0
+    }
+
+    fn transformation(&self) -> Matrix<f64> {
+        Matrix::<f64>::identity(4)
+    }
+
+    fn change_transformation(&self, _transformation: Matrix<f64>) { }
+}
+
+#[derive(Clone, Debug)]
+pub enum PatternKind {
     Stripes,
     Gradient,
     Ring,
     Checkers3D,
-}
-
-#[derive(Clone, Debug)]
-pub struct TwoColorPattern {
-    kind: PatternKind,
-    color_a: Color,
-    color_b: Color,
-    transformation: RefCell<Matrix<f64>>,
-}
-
-impl TwoColorPattern {
-
-    pub fn new_stripes(color_a: Color, color_b: Color) -> TwoColorPattern {
-        Self::new(PatternKind::Stripes, color_a, color_b)
-    }
-
-    pub fn new_gradient(color_a: Color, color_b: Color) -> TwoColorPattern {
-        Self::new(PatternKind::Gradient, color_a, color_b)
-    }
-
-    pub fn new_ring(color_a: Color, color_b: Color) -> TwoColorPattern {
-        Self::new(PatternKind::Ring, color_a, color_b)
-    }
-
-    pub fn new_checkers3d(color_a: Color, color_b: Color) -> TwoColorPattern {
-        Self::new(PatternKind::Checkers3D, color_a, color_b)
-    }
-
-    fn new(kind: PatternKind, color_a: Color, color_b: Color) -> TwoColorPattern {
-        TwoColorPattern {
-            kind,
-            color_a,
-            color_b,
-            transformation: RefCell::new(Matrix::identity(4))
-        }
-    }
-
-    fn stripes_color_at(&self, pt: Point) -> Color {
-        let x = pt.x();
-        if x.floor().to_i64().unwrap() % 2 == 0 {
-            self.color_a
-        } else {
-            self.color_b
-        }
-    }
-
-    fn gradient_color_at(&self, pt: Point) -> Color {
-
-        let gradient = self.color_b - self.color_a;
-        let fraction = pt.x() - pt.x().floor();
-
-        self.color_a + gradient * fraction
-    }
-
-    fn ring_color_at(&self, pt: Point) -> Color {
-
-        let radius = (pt.x().powi(2) + pt.z().powi(2)).sqrt()
-            .floor().to_i64().unwrap();
-
-        if radius % 2 == 0 {
-            self.color_a
-        } else {
-            self.color_b
-        }
-    }
-
-    fn checkers3d_color_at(&self, pt: Point) -> Color {
-        let value = pt.x().floor() + pt.y().floor() + pt.z().floor();
-        let value = value as i64;
-
-        if value % 2 == 0 {
-            self.color_a
-        } else {
-            self.color_b
-        }
-    }
-
-}
-
-impl Pattern for TwoColorPattern {
-
-    fn color_at(&self, pt: Point) -> Color {
-        match self.kind {
-            PatternKind::Stripes => self.stripes_color_at(pt),
-            PatternKind::Gradient => self.gradient_color_at(pt),
-            PatternKind::Ring => self.ring_color_at(pt),
-            PatternKind::Checkers3D => self.checkers3d_color_at(pt),
-        }
-    }
-
-    fn transformation(&self) -> Matrix<f64> {
-        self.transformation.borrow().deref().clone()
-    }
-
-    fn change_transformation(&self, transformation: Matrix<f64>) {
-        self.transformation.replace(transformation);
-    }
 }
 
 #[derive(Clone, Debug)]
@@ -156,7 +75,7 @@ impl NestedPattern {
         Self::new(PatternKind::Checkers3D, pattern_a, pattern_b)
     }
 
-    fn new(kind: PatternKind, pattern_a: Rc<dyn Pattern>, pattern_b: Rc<dyn Pattern>) -> NestedPattern {
+    pub fn new(kind: PatternKind, pattern_a: Rc<dyn Pattern>, pattern_b: Rc<dyn Pattern>) -> NestedPattern {
         NestedPattern {
             kind,
             pattern_a: pattern_a.clone(),
@@ -224,6 +143,54 @@ impl Pattern for NestedPattern {
 
     fn change_transformation(&self, transformation: Matrix<f64>) {
         self.transformation.replace(transformation);
+    }
+}
+#[derive(Clone, Debug)]
+pub struct TwoColorPattern {
+    nested_pattern: NestedPattern,
+}
+
+impl TwoColorPattern {
+
+    pub fn new_stripes(color_a: Color, color_b: Color) -> TwoColorPattern {
+        Self::new(PatternKind::Stripes, color_a, color_b)
+    }
+
+    pub fn new_gradient(color_a: Color, color_b: Color) -> TwoColorPattern {
+        Self::new(PatternKind::Gradient, color_a, color_b)
+    }
+
+    pub fn new_ring(color_a: Color, color_b: Color) -> TwoColorPattern {
+        Self::new(PatternKind::Ring, color_a, color_b)
+    }
+
+    pub fn new_checkers3d(color_a: Color, color_b: Color) -> TwoColorPattern {
+        Self::new(PatternKind::Checkers3D, color_a, color_b)
+    }
+
+    fn new(kind: PatternKind, color_a: Color, color_b: Color) -> TwoColorPattern {
+        TwoColorPattern {
+            nested_pattern: NestedPattern::new(
+                kind,
+                Rc::new(SolidPattern(color_a)),
+                Rc::new(SolidPattern(color_b))),
+        }
+    }
+
+}
+
+impl Pattern for TwoColorPattern {
+
+    fn color_at(&self, pt: Point) -> Color {
+        self.nested_pattern.color_at(pt)
+    }
+
+    fn transformation(&self) -> Matrix<f64> {
+        self.nested_pattern.transformation()
+    }
+
+    fn change_transformation(&self, transformation: Matrix<f64>) {
+        self.nested_pattern.change_transformation(transformation);
     }
 }
 
