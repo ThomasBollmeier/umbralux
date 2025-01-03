@@ -1,2 +1,5 @@
 mod base_types;
-pub use base_types::{Point, Vector};
+mod color;
+
+pub use base_types::{Point, Vector, Number, is_number_equal};
+pub use color::Color;

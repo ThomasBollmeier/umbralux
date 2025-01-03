@@ -4,11 +4,11 @@
 use std::ops::{Add, Div, Mul, Sub};
 use anyhow::anyhow;
 
-type Number = f64;
+pub type Number = f64;
 
 const EPSILON: Number = f64::EPSILON;
 
-fn is_equal(a: Number, b: Number) -> bool {
+pub fn is_number_equal(a: Number, b: Number) -> bool {
     (a - b).abs() < EPSILON
 }
 
@@ -81,7 +81,9 @@ impl Div<Number> for Point {
 
 impl PartialEq for Point {
     fn eq(&self, other: &Point) -> bool {
-        is_equal(self.0, other.0) && is_equal(self.1, other.1) && is_equal(self.2, other.2)
+        is_number_equal(self.0, other.0) &&
+            is_number_equal(self.1, other.1) &&
+            is_number_equal(self.2, other.2)
     }
 }
 
@@ -168,7 +170,9 @@ impl Div<Number> for Vector {
 
 impl PartialEq for Vector {
     fn eq(&self, other: &Vector) -> bool {
-        is_equal(self.0, other.0) && is_equal(self.1, other.1) && is_equal(self.2, other.2)
+        is_number_equal(self.0, other.0) &&
+            is_number_equal(self.1, other.1) &&
+            is_number_equal(self.2, other.2)
     }
 }
 
@@ -177,11 +181,11 @@ pub struct Vec4(Number, Number, Number, Number);
 
 impl Vec4 {
     pub fn is_point(&self) -> bool {
-        is_equal(self.3, 1.0)
+        is_number_equal(self.3, 1.0)
     }
 
     pub fn is_vector(&self) -> bool {
-        is_equal(self.3, 0.0)
+        is_number_equal(self.3, 0.0)
     }
 }
 
