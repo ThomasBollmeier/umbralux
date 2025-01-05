@@ -26,6 +26,12 @@ impl Color {
     }
 }
 
+impl From<Color> for Vec<Number> {
+    fn from(value: Color) -> Self {
+        vec![value.red, value.green, value.blue]
+    }
+}
+
 impl Add<Color> for Color {
     type Output = Color;
     fn add(self, rhs: Color) -> Self::Output {
