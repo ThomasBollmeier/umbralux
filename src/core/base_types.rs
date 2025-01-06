@@ -189,14 +189,14 @@ impl Vec4 {
     }
 }
 
-impl From<Point> for Vec4 {
-    fn from(p: Point) -> Vec4 {
+impl From<&Point> for Vec4 {
+    fn from(p: &Point) -> Vec4 {
         Vec4(p.0, p.1, p.2, 1.0)
     }
 }
 
-impl From<Vector> for Vec4 {
-    fn from(v: Vector) -> Vec4 {
+impl From<&Vector> for Vec4 {
+    fn from(v: &Vector) -> Vec4 {
         Vec4(v.0, v.1, v.2, 0.0)
     }
 }
@@ -216,7 +216,7 @@ mod tests {
 
     #[test]
     fn can_create_point() {
-        let p = Vec4::from(Point::new(1.0, 2.0, 3.0));
+        let p = Vec4::from(&Point::new(1.0, 2.0, 3.0));
         assert!(p.is_point());
         assert!(!p.is_vector());
     }
@@ -247,7 +247,7 @@ mod tests {
 
     #[test]
     fn can_create_vector() {
-        let v = Vec4::from(Vector::new(1.0, 2.0, 3.0));
+        let v = Vec4::from(&Vector::new(1.0, 2.0, 3.0));
         assert!(!v.is_point());
         assert!(v.is_vector());
     }

@@ -51,6 +51,17 @@ impl Matrix {
     pub fn set(&mut self, row: usize, col: usize, value: Number) {
         self.data[row][col] = value;
     }
+
+    pub fn transpose(&self) -> Matrix {
+        let mut ret = Matrix::new(self.num_cols(), self.num_rows());
+        for row in 0..self.num_rows {
+            for col in 0..self.num_cols {
+                ret.set(col, row, self.get(row, col));
+            }
+        }
+
+        ret
+    }
 }
 
 impl From<&Vec4> for Matrix {
@@ -193,5 +204,29 @@ mod tests {
 
         assert_eq!(a, b);
         assert_eq!(a, b2);
+    }
+
+    #[test]
+    fn test_transpose() {
+        let a = Matrix::new_with_data(&vec![
+            vec![1.0, 2.0, 3.0],
+            vec![4.0, 5.0, 6.0],
+            vec![7.0, 8.0, 9.0]
+        ]);
+        let expected = Matrix::new_with_data(&vec![
+            vec![1.0, 4.0, 7.0],
+            vec![2.0, 5.0, 8.0],
+            vec![3.0, 6.0, 9.0]
+        ]);
+        let actual = a.transpose();
+
+        assert_eq!(actual, expected);
+    }
+
+    #[test]
+    fn test_transpose_identity() {
+        let identity = Matrix::new_identity(3);
+
+        assert_eq!(identity.transpose(), identity);
     }
 }

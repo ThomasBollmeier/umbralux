@@ -1,6 +1,6 @@
+use anyhow::Result;
 use umbralux::core::{Canvas, Color, Point, Vector};
-use umbralux::io::save_canvas_to_ppm;
-use std::io::Result;
+use umbralux::io::save_canvas;
 
 fn main() -> Result<()> {
 
@@ -25,7 +25,7 @@ fn main() -> Result<()> {
         tick(&mut p, &env);
     }
 
-    save_canvas_to_ppm("trajectory.ppm", &canvas)
+    save_canvas("trajectory.jpg", &canvas)
 }
 
 fn tick(projectile: &mut Projectile, env: &Environment) {

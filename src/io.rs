@@ -1,8 +1,62 @@
 use std::fs::File;
-use std::io::{BufWriter, Result, Write};
-use crate::core::{Canvas, Number};
+use std::io::{BufWriter, Write};
+use anyhow::{anyhow, Result};
+use image::{ImageBuffer, Rgb, RgbImage};
+use num_traits::{cast, zero, FromPrimitive, NumCast, PrimInt};
+use crate::core::{Canvas, Color, Number};
 
-pub fn save_canvas_to_ppm(file_path: &str, canvas: &Canvas) -> Result<()> {
+pub enum ImageFormat {
+    PPM,
+    PNG,
+    JPG,
+}
+
+pub fn save_canvas(file_path: &str, canvas: &Canvas) -> Result<()> {
+    let img_format = derive_image_format(file_path)?;
+    match img_format {
+        ImageFormat::PPM => save_canvas_to_ppm(file_path, canvas),
+        ImageFormat::PNG | ImageFormat::JPG => save_canvas_to_file(file_path, canvas),
+    }
+}
+
+fn derive_image_format(file_path: &str) -> Result<ImageFormat> {
+    if file_path.ends_with(".ppm") {
+        Ok(ImageFormat::PPM)
+    } else if file_path.ends_with(".png") {
+        Ok(ImageFormat::PNG)
+    } else if file_path.ends_with(".jpg") {
+        Ok(ImageFormat::JPG)
+    } else {
+        Err(anyhow!("Unsupported image format"))
+    }
+}
+
+fn save_canvas_to_file(file_path: &str, canvas: &Canvas) -> Result<()> {
+    let width = canvas.width();
+    let height = canvas.height();
+
+    // Create an ImageBuffer to hold the image data
+    let mut img: RgbImage = ImageBuffer::new(width as u32, height as u32);
+
+    for row in 0..height {
+        for col in 0..width {
+            let color = canvas.get_pixel(row, col);
+            let scaled_values = color_to_scaled_rgb(&color, 255_u8);
+            img.put_pixel(col as u32,
+                          row as u32,
+                          Rgb([
+                              scaled_values[0],
+                              scaled_values[1],
+                              scaled_values[2]]));
+        }
+    }
+
+    // Save the image as a PNG file
+    img.save(file_path)?;
+    Ok(())
+}
+
+fn save_canvas_to_ppm(file_path: &str, canvas: &Canvas) -> Result<()> {
     let file = File::create(file_path)?;
     let mut writer = BufWriter::new(file);
     let content = canvas_to_ppm(canvas);
@@ -17,7 +71,7 @@ fn canvas_to_ppm(canvas: &Canvas) -> String {
     ret
 }
 
-fn canvas_to_ppm_header(canvas: &Canvas, max_color_value: u32) -> String{
+fn canvas_to_ppm_header(canvas: &Canvas, max_color_value: u32) -> String {
     let mut ret = String::new();
     ret.push_str("P3\n");
     ret.push_str(&format!("{} {}\n", canvas.width(), canvas.height()));
@@ -33,15 +87,8 @@ fn canvas_to_ppm_data(canvas: &Canvas, max_color_value: u32) -> String {
     for row in 0..canvas.height() {
         for col in 0..canvas.width() {
             let color = canvas.get_pixel(row, col);
-            let color_values: Vec<Number>  = Vec::from(color);
-            for color_value in color_values {
-                let scaled_value = if color_value >= 1.0 {
-                    max_color_value
-                } else if color_value <= 0.0 {
-                    0
-                } else {
-                   (color_value * max_color_value as Number).round() as u32
-                };
+            let scaled_values = color_to_scaled_rgb(&color, max_color_value);
+            for scaled_value in scaled_values {
                 let value_str = format!("{scaled_value}");
                 if current_line.len() + value_str.len() + 1 <= MAX_LINE_SIZE {
                     if !current_line.is_empty() {
@@ -68,6 +115,26 @@ fn canvas_to_ppm_data(canvas: &Canvas, max_color_value: u32) -> String {
     }
 
     ret
+}
+
+fn color_to_scaled_rgb<T: PrimInt + FromPrimitive + NumCast>(color: &Color, max_color_value: T) -> Vec<T> {
+    let color_values: Vec<Number> = Vec::from(color.clone());
+    let scaled_values = color_values
+        .iter()
+        .map(|val| {
+            if *val > 1.0 {
+                max_color_value
+            } else if *val <= 0.0 {
+                zero()
+            } else {
+                let max_color_value: Number = cast(max_color_value)
+                    .expect("Cannot convert max color value");
+                let scaled = (*val * max_color_value).round();
+                T::from_f64(scaled).expect("Could not convert color value")
+            }
+        })
+        .collect::<Vec<T>>();
+    scaled_values
 }
 
 #[cfg(test)]
