@@ -36,7 +36,7 @@ impl Canvas {
 
 #[cfg(test)]
 mod tests {
-    use crate::core::canvas::Canvas;
+    use super::Canvas;
     use crate::core::Color;
 
     #[test]

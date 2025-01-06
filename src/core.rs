@@ -1,7 +1,7 @@
 mod base_types;
-mod color;
 mod canvas;
+mod color;
 
-pub use base_types::{Point, Vector, Number, is_number_equal};
+pub use base_types::{is_number_equal, Number, Point, Vector};
 pub use color::Color;
 pub use canvas::Canvas;
