@@ -177,7 +177,7 @@ impl PartialEq for Vector {
 }
 
 #[derive(Debug, Clone)]
-pub struct Vec4(Number, Number, Number, Number);
+pub struct Vec4(pub Number, pub Number, pub Number, pub Number);
 
 impl Vec4 {
     pub fn is_point(&self) -> bool {
@@ -198,6 +198,15 @@ impl From<Point> for Vec4 {
 impl From<Vector> for Vec4 {
     fn from(v: Vector) -> Vec4 {
         Vec4(v.0, v.1, v.2, 0.0)
+    }
+}
+
+impl PartialEq for Vec4 {
+    fn eq(&self, other: &Vec4) -> bool {
+        is_number_equal(self.0, other.0) &&
+            is_number_equal(self.1, other.1) &&
+            is_number_equal(self.2, other.2) &&
+            is_number_equal(self.3, other.3)
     }
 }
 
