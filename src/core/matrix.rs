@@ -1,4 +1,5 @@
 use std::ops::Mul;
+use anyhow::{anyhow, Result};
 use crate::core::base_types::Vec4;
 use crate::core::Number;
 
@@ -34,6 +35,44 @@ impl Matrix {
             ret.set(i, i, 1.0);
         }
         ret
+    }
+    pub fn sub_matrix(&self, row_idx: usize, col_idx: usize) -> Matrix {
+        let mut data = vec![];
+        for r in 0..self.num_rows {
+            if r == row_idx {
+                continue;
+            }
+            let mut row = vec![];
+            for c in 0..self.num_cols {
+                if c == col_idx {
+                    continue;
+                }
+                row.push(self.get(r, c));
+            }
+            data.push(row);
+        }
+        Matrix::new_with_data(&data)
+    }
+
+    pub fn determinant(&self) -> Result<Number> {
+        if self.num_rows != self.num_cols {
+            return Err(anyhow!("Determinant is only defined for square matrices"));
+        }
+
+        if self.num_rows == 1 {
+            return Ok(self.get(0, 0));
+        }
+
+        let mut ret: Number = 0.0;
+        let mut sign = 1;
+
+        for col in 0..self.num_cols {
+            ret += sign as Number * self.get(0, col) *
+                self.sub_matrix(0, col).determinant()?;
+            sign = -sign;
+        }
+
+        Ok(ret)
     }
 
     pub fn num_rows(&self) -> usize {
@@ -228,5 +267,35 @@ mod tests {
         let identity = Matrix::new_identity(3);
 
         assert_eq!(identity.transpose(), identity);
+    }
+
+    #[test]
+    fn test_sub_matrix() {
+        let a = Matrix::new_with_data(&vec![
+            vec![1.0, 2.0, 3.0],
+            vec![4.0, 5.0, 6.0],
+            vec![7.0, 8.0, 9.0],
+        ]);
+        let expected = Matrix::new_with_data(&vec![
+            vec![1.0, 3.0],
+            vec![4.0, 6.0],
+        ]);
+        let actual = a.sub_matrix(2, 1);
+
+        assert_eq!(actual, expected);
+    }
+
+    #[test]
+    fn test_determinant() {
+        let a = Matrix::new_with_data(&vec![
+            vec![-2.0, -8.0, 3.0, 5.0],
+            vec![-3.0, 1.0, 7.0, 3.0],
+            vec![1.0, 2.0, -9.0, 6.0],
+            vec![-6.0, 7.0, 7.0, -9.0],
+        ]);
+        let expected = -4071.0;
+        let actual = a.determinant().unwrap();
+
+        assert_eq!(actual, expected);
     }
 }
