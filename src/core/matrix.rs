@@ -168,7 +168,7 @@ impl PartialEq for Matrix {
         }
         for row in 0..self.num_rows {
             for col in 0..self.num_cols {
-                if self.get(row, col) != other.get(row, col) {
+                if !is_number_equal(self.get(row, col), other.get(row, col)) {
                     return false;
                 }
             }
@@ -352,6 +352,20 @@ mod tests {
                 assert_eq!(actual_val, expected_val);
             }
         }
+    }
+
+    #[test]
+    fn test_a_times_a_inv_is_identity() {
+        let a = Matrix::new_with_data(&vec![
+            vec![1.0, 2.0, 3.0],
+            vec![4.0, 50.0, 6.0],
+            vec![9.0, 8.0, 7.0],
+        ]);
+        let a_inv = a.invert().unwrap();
+        let expected = Matrix::new_identity(3);
+        let actual = a * a_inv;
+
+        assert_eq!(expected, actual);
     }
 
     fn round_to_decimals(x: Number, decimals: u32) -> Number {
