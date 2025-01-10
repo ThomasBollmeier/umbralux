@@ -1,7 +1,7 @@
 use std::ops::Mul;
 use anyhow::{anyhow, Result};
 use crate::core::base_types::Vec4;
-use crate::core::Number;
+use crate::core::{is_number_equal, Number};
 
 #[derive(Debug, Clone)]
 pub struct Matrix {
@@ -36,6 +36,34 @@ impl Matrix {
         }
         ret
     }
+
+    pub fn invert(&self) -> Result<Matrix> {
+        if self.num_rows != self.num_cols {
+            return Err(anyhow!("Cannot invert non-square matrix"));
+        }
+
+        let mut data = vec![];
+        let det = self.determinant()?;
+
+        if is_number_equal(det, 0.0) {
+            return Err(anyhow!("Cannot invert matrix with zero determinant"));
+        }
+
+        for r in 0..self.num_rows {
+            let mut row = vec![];
+            let mut sign: Number = if r % 2 == 0 { 1.0 } else { -1.0 };
+            for c in 0..self.num_cols {
+                let mut value = sign * self.sub_matrix(c, r).determinant()?;
+                value /= det;
+                row.push(value);
+                sign = -sign;
+            }
+            data.push(row);
+        }
+
+        Ok(Matrix::new_with_data(&data))
+    }
+
     pub fn sub_matrix(&self, row_idx: usize, col_idx: usize) -> Matrix {
         let mut data = vec![];
         for r in 0..self.num_rows {
@@ -176,6 +204,7 @@ impl Mul<Matrix> for Matrix {
 mod tests {
     use crate::core::base_types::Vec4;
     use crate::core::matrix::Matrix;
+    use crate::core::Number;
 
     #[test]
     fn test_equality() {
@@ -297,5 +326,36 @@ mod tests {
         let actual = a.determinant().unwrap();
 
         assert_eq!(actual, expected);
+    }
+
+    #[test]
+    fn test_inverse() {
+        let a = Matrix::new_with_data(&vec![
+           vec![-5.0, 2.0, 6.0, -8.0],
+           vec![1.0, -5.0, 1.0, 8.0],
+           vec![7.0, 7.0, -6.0, -7.0],
+           vec![1.0, -3.0, 7.0, 4.0],
+        ]);
+        let expected = Matrix::new_with_data(&vec![
+            vec![0.21805, 0.45113, 0.24060, -0.04511],
+            vec![-0.80827, -1.45677, -0.44361, 0.52068],
+            vec![-0.07895, -0.22368, -0.05263, 0.19737],
+            vec![-0.52256, -0.81391, -0.30075, 0.30639],
+        ]);
+        let actual = a.invert().unwrap();
+
+        for row in 0..actual.num_rows() {
+            for col in 0..actual.num_cols() {
+                let mut actual_val = actual.get(row, col);
+                actual_val = round_to_decimals(actual_val, 5);
+                let expected_val = expected.get(row, col);
+                assert_eq!(actual_val, expected_val);
+            }
+        }
+    }
+
+    fn round_to_decimals(x: Number, decimals: u32) -> Number {
+        let y = 10i32.pow(decimals) as Number;
+        (x * y).round() / y
     }
 }
