@@ -1,4 +1,4 @@
-mod base_types;
+pub mod base_types;
 mod canvas;
 mod color;
 mod matrix;
