@@ -2,11 +2,27 @@ use crate::core::{Matrix, Number, Vec4};
 use anyhow::{anyhow, Error};
 
 pub enum Transformation {
-    Translation { x: Number, y: Number, z: Number },
-    Scaling { x: Number, y: Number, z: Number },
+    Translation {
+        x: Number,
+        y: Number,
+        z: Number
+    },
+    Scaling {
+        x: Number,
+        y: Number,
+        z: Number
+    },
     RotationX { phi: Number },
     RotationY { phi: Number },
     RotationZ { phi: Number },
+    Shearing {
+        x_y: Number,
+        x_z: Number,
+        y_x: Number,
+        y_z: Number,
+        z_x: Number,
+        z_y: Number
+    },
 }
 
 impl Transformation {
@@ -18,6 +34,8 @@ impl Transformation {
             RotationX {phi} => Self::create_rotation_x(*phi),
             RotationY {phi} => Self::create_rotation_y(*phi),
             RotationZ {phi} => Self::create_rotation_z(*phi),
+            Shearing {x_y, x_z, y_x, y_z, z_x, z_y} =>
+                Self::create_shearing(*x_y, *x_z, *y_x, *y_z, *z_x, *z_y),
         }
     }
 
@@ -61,6 +79,20 @@ impl Transformation {
         ret.set(0, 1, -phi.sin());
         ret.set(1, 0, phi.sin());
         ret.set(1, 1, phi.cos());
+        ret
+    }
+
+    fn create_shearing(
+        x_y: Number, x_z: Number,
+        y_x: Number, y_z: Number,
+        z_x: Number, z_y: Number ) -> Matrix {
+        let mut ret = Matrix::new_identity(4);
+        ret.set(0, 1, x_y);
+        ret.set(0, 2, x_z);
+        ret.set(1, 0, y_x);
+        ret.set(1, 2, y_z);
+        ret.set(2, 0, z_x);
+        ret.set(2, 1, z_y);
         ret
     }
 
@@ -200,6 +232,108 @@ mod tests {
         let expected = Point::new(-FRAC_1_SQRT_2, FRAC_1_SQRT_2, 0.0);
         let rot = RotationZ { phi: FRAC_PI_4 };
         let actual = transform(&point, &vec![&rot]).unwrap();
+
+        assert_eq!(actual, expected);
+    }
+
+    #[test]
+    fn test_shearing_x_y() {
+        let point = Point::new(2.0, 3.0, 4.0);
+        let expected = Point::new(5.0, 3.0, 4.0);
+        let shearing = Shearing {
+            x_y: 1.0,
+            x_z: 0.0,
+            y_x: 0.0,
+            y_z: 0.0,
+            z_x: 0.0,
+            z_y: 0.0,
+        };
+        let actual = transform(&point, &vec![&shearing]).unwrap();
+
+        assert_eq!(actual, expected);
+    }
+
+    #[test]
+    fn test_shearing_x_z() {
+        let point = Point::new(2.0, 3.0, 4.0);
+        let expected = Point::new(6.0, 3.0, 4.0);
+        let shearing = Shearing {
+            x_y: 0.0,
+            x_z: 1.0,
+            y_x: 0.0,
+            y_z: 0.0,
+            z_x: 0.0,
+            z_y: 0.0,
+        };
+        let actual = transform(&point, &vec![&shearing]).unwrap();
+
+        assert_eq!(actual, expected);
+    }
+
+    #[test]
+    fn test_shearing_y_x() {
+        let point = Point::new(2.0, 3.0, 4.0);
+        let expected = Point::new(2.0, 5.0, 4.0);
+        let shearing = Shearing {
+            x_y: 0.0,
+            x_z: 0.0,
+            y_x: 1.0,
+            y_z: 0.0,
+            z_x: 0.0,
+            z_y: 0.0,
+        };
+        let actual = transform(&point, &vec![&shearing]).unwrap();
+
+        assert_eq!(actual, expected);
+    }
+
+    #[test]
+    fn test_shearing_y_z() {
+        let point = Point::new(2.0, 3.0, 4.0);
+        let expected = Point::new(2.0, 7.0, 4.0);
+        let shearing = Shearing {
+            x_y: 0.0,
+            x_z: 0.0,
+            y_x: 0.0,
+            y_z: 1.0,
+            z_x: 0.0,
+            z_y: 0.0,
+        };
+        let actual = transform(&point, &vec![&shearing]).unwrap();
+
+        assert_eq!(actual, expected);
+    }
+
+    #[test]
+    fn test_shearing_z_x() {
+        let point = Point::new(2.0, 3.0, 4.0);
+        let expected = Point::new(2.0, 3.0, 6.0);
+        let shearing = Shearing {
+            x_y: 0.0,
+            x_z: 0.0,
+            y_x: 0.0,
+            y_z: 0.0,
+            z_x: 1.0,
+            z_y: 0.0,
+        };
+        let actual = transform(&point, &vec![&shearing]).unwrap();
+
+        assert_eq!(actual, expected);
+    }
+
+    #[test]
+    fn test_shearing_z_y() {
+        let point = Point::new(2.0, 3.0, 4.0);
+        let expected = Point::new(2.0, 3.0, 7.0);
+        let shearing = Shearing {
+            x_y: 0.0,
+            x_z: 0.0,
+            y_x: 0.0,
+            y_z: 0.0,
+            z_x: 0.0,
+            z_y: 1.0,
+        };
+        let actual = transform(&point, &vec![&shearing]).unwrap();
 
         assert_eq!(actual, expected);
     }
